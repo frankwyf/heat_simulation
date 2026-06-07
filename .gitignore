@@ -1,0 +1,19 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+
+# Plot outputs and temp artifacts
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# IDE and OS files
+.vscode/
+.DS_Store
+Thumbs.db
