@@ -122,14 +122,30 @@ def _tag_exists(cwd: str, tag: str) -> bool:
         return False
 
 
-def prepare_release(base_dir: str, version: str, create_tag: bool, dry_run: bool, bump: str | None = None):
+def prepare_release(
+    base_dir: str,
+    version: str,
+    create_tag: bool,
+    dry_run: bool,
+    bump: str | None = None,
+    from_tag: str | None = None,
+):
+    if version and bump:
+        raise RuntimeError("--version and --bump cannot be used together")
+
     if not version:
         if not bump:
             raise RuntimeError("Either --version or --bump must be provided")
         version = _next_version(base_dir, bump)
 
-    latest_tag = _latest_tag(base_dir)
-    commit_range = f"{latest_tag}..HEAD" if latest_tag else "HEAD"
+    if from_tag:
+        if not _tag_exists(base_dir, from_tag):
+            raise RuntimeError(f"from-tag does not exist: {from_tag}")
+        commit_range = f"{from_tag}..HEAD"
+    else:
+        latest_tag = _latest_tag(base_dir)
+        commit_range = f"{latest_tag}..HEAD" if latest_tag else "HEAD"
+
     commits = _collect_commits(base_dir, commit_range)
     grouped = _group_commits(commits)
 
@@ -160,6 +176,7 @@ def parse_args():
     parser.add_argument("--base-dir", default=".", help="Project root path")
     parser.add_argument("--version", required=False, help="Release version/tag, e.g. v0.2.0")
     parser.add_argument("--bump", choices=["patch", "minor"], help="Auto-calculate next semantic version from latest tag")
+    parser.add_argument("--from-tag", help="Use an explicit tag as changelog range start, e.g. v0.1.0")
     parser.add_argument("--create-tag", action="store_true", help="Create local annotated git tag")
     parser.add_argument("--dry-run", action="store_true", help="Preview without changing files/tags")
     return parser.parse_args()
@@ -173,4 +190,5 @@ if __name__ == "__main__":
         create_tag=args.create_tag,
         dry_run=args.dry_run,
         bump=args.bump,
+        from_tag=args.from_tag,
     )

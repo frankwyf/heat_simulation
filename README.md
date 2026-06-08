@@ -64,6 +64,13 @@ python release_prepare.py --bump patch --dry-run
 python release_prepare.py --bump minor --dry-run
 ```
 
+Use an explicit changelog range start tag:
+```bash
+python release_prepare.py --from-tag v0.1.0 --version v0.2.0 --dry-run
+```
+
+Note: `--version` and `--bump` are mutually exclusive.
+
 ### 9) One-Command Release Pipeline (Windows)
 ```bash
 release.bat --version v0.2.1 --dry-run
@@ -170,6 +177,13 @@ python release_prepare.py --version v0.2.0 --create-tag
 python release_prepare.py --bump patch --dry-run
 python release_prepare.py --bump minor --dry-run
 ```
+
+也可以指定 changelog 的起始 tag：
+```bash
+python release_prepare.py --from-tag v0.1.0 --version v0.2.0 --dry-run
+```
+
+注意：`--version` 和 `--bump` 不能同时使用。
 
 ### Windows 一键发布流水线
 ```bash
@@ -312,6 +326,13 @@ You can also auto-bump from latest semantic tag:
 python release_prepare.py --bump patch --dry-run
 python release_prepare.py --bump minor --dry-run
 ```
+
+You can pin an explicit range start tag:
+```bash
+python release_prepare.py --from-tag v0.1.0 --version v0.2.0 --dry-run
+```
+
+`--version` and `--bump` are mutually exclusive.
 
 ### One-Command Release Pipeline (Windows)
 ```bash
