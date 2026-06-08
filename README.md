@@ -48,6 +48,13 @@ python release_checklist.py
 
 This summarizes git status, recent commits, and validation readiness in `reports/release_checklist.md`.
 
+### 8) Prepare Changelog And Tag
+```bash
+python release_prepare.py --version v0.2.0 --create-tag
+```
+
+Use `--dry-run` to preview changes before writing `CHANGELOG.md` or creating tag.
+
 The Web UI allows you to:
 - tune ambient temperature, initial condition, and wind speed
 - customize irradiance profile from 9:00-16:00
@@ -130,6 +137,13 @@ python release_checklist.py
 ```
 
 会汇总 git 状态、最近提交与验证结果，生成 `reports/release_checklist.md`。
+
+### 生成变更日志并准备本地 Tag
+```bash
+python release_prepare.py --version v0.2.0 --create-tag
+```
+
+可先用 `--dry-run` 预览，不写文件、不创建 tag。
 
 ### 目录结构
 - `solve.py`: 主仿真入口（推荐）
@@ -249,6 +263,13 @@ python release_checklist.py
 
 Generates `reports/release_checklist.md` with git and validation readiness info.
 
+### Prepare Changelog And Tag
+```bash
+python release_prepare.py --version v0.2.0 --create-tag
+```
+
+Add `--dry-run` for preview-only mode.
+
 ## Notes
 - The optimization scripts are research-style experiments and may take longer to run.
 - For fast validation, use `solve.py`.
@@ -262,3 +283,4 @@ Generates `reports/release_checklist.md` with git and validation readiness info.
 - `generate_portfolio_report.py`: generate markdown report for portfolio presentation
 - `validate_local_pipeline.py`: one-command local validation workflow
 - `release_checklist.py`: generate publish readiness checklist from git + validation status
+- `release_prepare.py`: generate changelog section and optional local release tag
