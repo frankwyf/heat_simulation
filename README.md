@@ -19,72 +19,73 @@ python solve.py --no-plot --save-path result.png
 streamlit run app.py
 ```
 
-The optimizer tab supports editing `benchmark_profiles.json` directly in the UI and saving updates.
+The optimizer tab supports editing `configs/benchmark_profiles.json` directly in the UI and saving updates.
 Each save writes a change snapshot under `reports/profile_history/` for traceability.
 You can also choose a snapshot in UI to rollback profile settings safely.
 Selected snapshot details and parameter diffs can be previewed before rollback.
 The preview flags `ok`, `missing`, `type-mismatch`, and `out-of-range` values before rollback.
+The optimizer tab now also shows the latest benchmark snapshot summary at a glance.
 
 ### 4) Run Local Optimizer Benchmark (GA/PSO/SA)
 ```bash
-python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
+python -m heat_simulation.tools.benchmark_runner --runs 2 --ga-iter 200 --seed 42 --profile quick
 ```
 
 Artifacts will be generated under `reports/` as CSV + PNG + JSON.
-Profile parameters are defined in `benchmark_profiles.json` for reproducible tuning.
+Profile parameters are defined in `configs/benchmark_profiles.json` for reproducible tuning.
 
 ### 5) Generate Portfolio Markdown Report
 ```bash
-python generate_portfolio_report.py
+python -m heat_simulation.tools.generate_portfolio_report
 ```
 
 This generates `reports/portfolio_report.md` using the latest benchmark artifacts.
 
 ### 6) Run Full Local Validation
 ```bash
-python validate_local_pipeline.py
+python -m heat_simulation.tools.validate_local_pipeline
 ```
 
 This performs compile checks, CLI simulation, quick benchmark, and report generation in one command.
 
 ### 7) Generate Release Checklist
 ```bash
-python release_checklist.py
+python -m heat_simulation.tools.release_checklist
 ```
 
 This summarizes git status, recent commits, and validation readiness in `reports/release_checklist.md`.
 
 ### 8) Prepare Changelog And Tag
 ```bash
-python release_prepare.py --version v0.2.0 --create-tag
+python -m heat_simulation.tools.release_prepare --version v0.2.0 --create-tag
 ```
 
 Use `--dry-run` to preview changes before writing `CHANGELOG.md` or creating tag.
 
 Auto-bump semantic version from latest tag:
 ```bash
-python release_prepare.py --bump patch --dry-run
-python release_prepare.py --bump minor --dry-run
+python -m heat_simulation.tools.release_prepare --bump patch --dry-run
+python -m heat_simulation.tools.release_prepare --bump minor --dry-run
 ```
 
 Use an explicit changelog range start tag:
 ```bash
-python release_prepare.py --from-tag v0.1.0 --version v0.2.0 --dry-run
+python -m heat_simulation.tools.release_prepare --from-tag v0.1.0 --version v0.2.0 --dry-run
 ```
 
 Or use commits from recent days:
 ```bash
-python release_prepare.py --since-days 30 --version v0.2.0 --dry-run
+python -m heat_simulation.tools.release_prepare --since-days 30 --version v0.2.0 --dry-run
 ```
 
 You can also filter by author and commit subject keyword:
 ```bash
-python release_prepare.py --since-days 30 --author "isidsh" --grep "feat" --version v0.2.0 --dry-run
+python -m heat_simulation.tools.release_prepare --since-days 30 --author "isidsh" --grep "feat" --version v0.2.0 --dry-run
 ```
 
 If an empty result set should fail fast:
 ```bash
-python release_prepare.py --since-days 30 --author "nobody" --version v0.2.0 --dry-run --require-nonempty
+python -m heat_simulation.tools.release_prepare --since-days 30 --author "nobody" --version v0.2.0 --dry-run --require-nonempty
 ```
 
 Note: `--version` and `--bump` are mutually exclusive.
@@ -105,6 +106,29 @@ The Web UI allows you to:
 - customize irradiance profile from 9:00-16:00
 - visualize thermal responses instantly
 - export results as CSV for further analysis/reporting
+
+## Project Layout
+
+```text
+heat_simulation/
+├─ app.py
+├─ solve.py
+├─ configs/
+│  └─ benchmark_profiles.json
+├─ heat_simulation/
+│  ├─ core/
+│  ├─ optimizers/
+│  └─ tools/
+├─ legacy/
+│  └─ solve.m
+├─ reports/
+├─ release.bat
+├─ release.ps1
+├─ README.md
+└─ requirements.txt
+```
+
+This keeps the root focused on user-facing entrypoints while moving reusable code, tooling, configuration, and legacy files into dedicated folders.
 
 ## 中文说明（Chinese）
 
@@ -151,7 +175,7 @@ streamlit run app.py
 
 ### 运行本地算法基准对比
 ```bash
-python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
+python -m heat_simulation.tools.benchmark_runner --runs 2 --ga-iter 200 --seed 42 --profile quick
 ```
 
 报告将输出到 `reports/`，包含：
@@ -160,64 +184,65 @@ python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
 - 对比图 PNG
 - 元信息 JSON
 
-`benchmark_profiles.json` 用于管理 quick/standard 的参数配置，方便版本化追踪调参。
+`configs/benchmark_profiles.json` 用于管理 quick/standard 的参数配置，方便版本化追踪调参。
 每次在 UI 保存配置时，会在 `reports/profile_history/` 生成参数差异快照。
 也支持在 UI 中选择快照执行回滚。
 回滚前可先在 UI 预览快照保存时间和参数变更明细。
 预览中会标记 `ok`、`missing`、`type-mismatch`、`out-of-range` 状态，便于先发现异常参数。
+优化器页也会展示最近一次 benchmark 的摘要，便于快速回顾结果。
 
 ### 生成作品集报告（Markdown）
 ```bash
-python generate_portfolio_report.py
+python -m heat_simulation.tools.generate_portfolio_report
 ```
 
 将自动读取最新一次 benchmark 的结果，生成 `reports/portfolio_report.md`。
 
 ### 一键执行本地稳定性验证
 ```bash
-python validate_local_pipeline.py
+python -m heat_simulation.tools.validate_local_pipeline
 ```
 
 会依次执行编译检查、CLI 仿真、quick benchmark 与报告生成。
 
 ### 生成发布检查清单
 ```bash
-python release_checklist.py
+python -m heat_simulation.tools.release_checklist
 ```
 
 会汇总 git 状态、最近提交与验证结果，生成 `reports/release_checklist.md`。
 
 ### 生成变更日志并准备本地 Tag
 ```bash
-python release_prepare.py --version v0.2.0 --create-tag
+python -m heat_simulation.tools.release_prepare --version v0.2.0 --create-tag
 ```
 
 可先用 `--dry-run` 预览，不写文件、不创建 tag。
 
 也支持根据最新 tag 自动递增版本：
 ```bash
-python release_prepare.py --bump patch --dry-run
-python release_prepare.py --bump minor --dry-run
+python -m heat_simulation.tools.release_prepare --bump patch --dry-run
+python -m heat_simulation.tools.release_prepare --bump minor --dry-run
 ```
 
 也可以指定 changelog 的起始 tag：
 ```bash
-python release_prepare.py --from-tag v0.1.0 --version v0.2.0 --dry-run
+python -m heat_simulation.tools.release_prepare --from-tag v0.1.0 --version v0.2.0 --dry-run
 ```
 
 也可以仅使用最近 N 天的提交生成 changelog：
 ```bash
-python release_prepare.py --since-days 30 --version v0.2.0 --dry-run
+python -m heat_simulation.tools.release_prepare --since-days 30 --version v0.2.0 --dry-run
 ```
 
 也支持按作者和提交标题关键词筛选：
 ```bash
-python release_prepare.py --since-days 30 --author "isidsh" --grep "feat" --version v0.2.0 --dry-run
+python -m heat_simulation.tools.release_prepare --since-days 30 --author "isidsh" --grep "feat" --version v0.2.0 --dry-run
 ```
 
 如果希望筛选结果为空时直接失败：
 ```bash
-python release_prepare.py --since-days 30 --author "nobody" --version v0.2.0 --dry-run --require-nonempty
+python -m heat_simulation.tools.release_prepare --since-days 30 --author "nobody" --version v0.2.0 --dry-run --require-nonempty
 ```
 
 注意：`--version` 和 `--bump` 不能同时使用。
@@ -234,11 +259,13 @@ PowerShell 版本：
 ```
 
 ### 目录结构
-- `solve.py`: 主仿真入口（推荐）
-- `GA.py`: 遗传算法实验脚本
-- `PSO.py`: 粒子群算法实验脚本
-- `SA.py`: 模拟退火算法实验脚本
-- `solve.m`: 历史 MATLAB 版本
+- `app.py`: Streamlit 展示入口
+- `solve.py`: CLI 仿真入口
+- `configs/`: benchmark 配置文件
+- `heat_simulation/core/`: 共享模型和文案
+- `heat_simulation/optimizers/`: GA / PSO / SA 实现
+- `heat_simulation/tools/`: benchmark、报告、验证、发布工具
+- `legacy/solve.m`: 历史 MATLAB 版本
 
 ---
 
@@ -323,54 +350,55 @@ The UI is designed for open-source portfolio demos and technical interviews.
 
 ### Local Benchmark Pipeline
 ```bash
-python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
+python -m heat_simulation.tools.benchmark_runner --runs 2 --ga-iter 200 --seed 42 --profile quick
 ```
 
 This generates report artifacts in `reports/` for reproducible algorithm comparison.
 Use `--profile standard` for heavier runs.
-Profile settings are versioned in `benchmark_profiles.json`.
+Profile settings are versioned in `configs/benchmark_profiles.json`.
 Every UI save creates a diff snapshot in `reports/profile_history/`.
 You can rollback profile settings from snapshot history directly in the UI.
 The selected snapshot preview shows saved time and parameter-level diffs before rollback.
 The preview also marks `ok`, `missing`, `type-mismatch`, and `out-of-range` validation states.
+The optimizer tab also shows the latest benchmark snapshot summary.
 
 ### Generate Portfolio Report
 ```bash
-python generate_portfolio_report.py
+python -m heat_simulation.tools.generate_portfolio_report
 ```
 
 This creates `reports/portfolio_report.md` from the latest benchmark metadata.
 
 ### Full Local Validation
 ```bash
-python validate_local_pipeline.py
+python -m heat_simulation.tools.validate_local_pipeline
 ```
 
 Runs compile checks, CLI simulation, quick benchmark, and report generation in one reproducible step.
 
 ### Generate Release Checklist
 ```bash
-python release_checklist.py
+python -m heat_simulation.tools.release_checklist
 ```
 
 Generates `reports/release_checklist.md` with git and validation readiness info.
 
 ### Prepare Changelog And Tag
 ```bash
-python release_prepare.py --version v0.2.0 --create-tag
+python -m heat_simulation.tools.release_prepare --version v0.2.0 --create-tag
 ```
 
 Add `--dry-run` for preview-only mode.
 
 You can also auto-bump from latest semantic tag:
 ```bash
-python release_prepare.py --bump patch --dry-run
-python release_prepare.py --bump minor --dry-run
+python -m heat_simulation.tools.release_prepare --bump patch --dry-run
+python -m heat_simulation.tools.release_prepare --bump minor --dry-run
 ```
 
 You can pin an explicit range start tag:
 ```bash
-python release_prepare.py --from-tag v0.1.0 --version v0.2.0 --dry-run
+python -m heat_simulation.tools.release_prepare --from-tag v0.1.0 --version v0.2.0 --dry-run
 ```
 
 `--version` and `--bump` are mutually exclusive.
@@ -392,12 +420,12 @@ PowerShell variant:
 ## Project Entry Points
 - `solve.py`: command-line simulation entrypoint
 - `app.py`: interactive showcase UI entrypoint
-- `simulation_core.py`: reusable simulation engine used by both CLI and UI
-- `benchmark_runner.py`: reproducible local benchmark and report generator
-- `benchmark_profiles.json`: versioned benchmark parameter profiles (quick/standard)
-- `generate_portfolio_report.py`: generate markdown report for portfolio presentation
-- `validate_local_pipeline.py`: one-command local validation workflow
-- `release_checklist.py`: generate publish readiness checklist from git + validation status
-- `release_prepare.py`: generate changelog section and optional local release tag
+- `heat_simulation/core/simulation_core.py`: reusable simulation engine used by both CLI and UI
+- `configs/benchmark_profiles.json`: versioned benchmark parameter profiles (quick/standard)
+- `heat_simulation/tools/benchmark_runner.py`: reproducible local benchmark and report generator
+- `heat_simulation/tools/generate_portfolio_report.py`: generate markdown report for portfolio presentation
+- `heat_simulation/tools/validate_local_pipeline.py`: one-command local validation workflow
+- `heat_simulation/tools/release_checklist.py`: generate publish readiness checklist from git + validation status
+- `heat_simulation/tools/release_prepare.py`: generate changelog section and optional local release tag
 - `release.bat`: one-command release pipeline for Windows CMD
 - `release.ps1`: one-command release pipeline for PowerShell
