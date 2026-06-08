@@ -25,6 +25,7 @@ python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
 ```
 
 Artifacts will be generated under `reports/` as CSV + PNG + JSON.
+Profile parameters are defined in `benchmark_profiles.json` for reproducible tuning.
 
 ### 5) Generate Portfolio Markdown Report
 ```bash
@@ -106,6 +107,8 @@ python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
 - 汇总 CSV
 - 对比图 PNG
 - 元信息 JSON
+
+`benchmark_profiles.json` 用于管理 quick/standard 的参数配置，方便版本化追踪调参。
 
 ### 生成作品集报告（Markdown）
 ```bash
@@ -223,6 +226,7 @@ python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
 
 This generates report artifacts in `reports/` for reproducible algorithm comparison.
 Use `--profile standard` for heavier runs.
+Profile settings are versioned in `benchmark_profiles.json`.
 
 ### Generate Portfolio Report
 ```bash
@@ -254,6 +258,7 @@ Generates `reports/release_checklist.md` with git and validation readiness info.
 - `app.py`: interactive showcase UI entrypoint
 - `simulation_core.py`: reusable simulation engine used by both CLI and UI
 - `benchmark_runner.py`: reproducible local benchmark and report generator
+- `benchmark_profiles.json`: versioned benchmark parameter profiles (quick/standard)
 - `generate_portfolio_report.py`: generate markdown report for portfolio presentation
 - `validate_local_pipeline.py`: one-command local validation workflow
 - `release_checklist.py`: generate publish readiness checklist from git + validation status

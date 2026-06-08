@@ -1,0 +1,22 @@
+{
+  "quick": {
+    "ga_population": 140,
+    "ga_nochange_iter": 120,
+    "pso_population": 120,
+    "pso_iterations": 70,
+    "sa_num_iter": 2500,
+    "sa_t_max": 10,
+    "sa_cooling_rate": 0.62,
+    "sa_max_outer_iter": 320
+  },
+  "standard": {
+    "ga_population": 180,
+    "ga_nochange_iter": 150,
+    "pso_population": 220,
+    "pso_iterations": 100,
+    "sa_num_iter": 4500,
+    "sa_t_max": 14,
+    "sa_cooling_rate": 0.58,
+    "sa_max_outer_iter": 420
+  }
+}
