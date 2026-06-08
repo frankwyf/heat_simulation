@@ -21,6 +21,7 @@ streamlit run app.py
 
 The optimizer tab supports editing `benchmark_profiles.json` directly in the UI and saving updates.
 Each save writes a change snapshot under `reports/profile_history/` for traceability.
+You can also choose a snapshot in UI to rollback profile settings safely.
 
 ### 4) Run Local Optimizer Benchmark (GA/PSO/SA)
 ```bash
@@ -69,7 +70,13 @@ Use an explicit changelog range start tag:
 python release_prepare.py --from-tag v0.1.0 --version v0.2.0 --dry-run
 ```
 
+Or use commits from recent days:
+```bash
+python release_prepare.py --since-days 30 --version v0.2.0 --dry-run
+```
+
 Note: `--version` and `--bump` are mutually exclusive.
+`--from-tag` and `--since-days` are mutually exclusive.
 
 ### 9) One-Command Release Pipeline (Windows)
 ```bash
@@ -143,6 +150,7 @@ python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
 
 `benchmark_profiles.json` 用于管理 quick/standard 的参数配置，方便版本化追踪调参。
 每次在 UI 保存配置时，会在 `reports/profile_history/` 生成参数差异快照。
+也支持在 UI 中选择快照执行回滚。
 
 ### 生成作品集报告（Markdown）
 ```bash
@@ -183,7 +191,13 @@ python release_prepare.py --bump minor --dry-run
 python release_prepare.py --from-tag v0.1.0 --version v0.2.0 --dry-run
 ```
 
+也可以仅使用最近 N 天的提交生成 changelog：
+```bash
+python release_prepare.py --since-days 30 --version v0.2.0 --dry-run
+```
+
 注意：`--version` 和 `--bump` 不能同时使用。
+`--from-tag` 和 `--since-days` 不能同时使用。
 
 ### Windows 一键发布流水线
 ```bash
@@ -292,6 +306,7 @@ This generates report artifacts in `reports/` for reproducible algorithm compari
 Use `--profile standard` for heavier runs.
 Profile settings are versioned in `benchmark_profiles.json`.
 Every UI save creates a diff snapshot in `reports/profile_history/`.
+You can rollback profile settings from snapshot history directly in the UI.
 
 ### Generate Portfolio Report
 ```bash

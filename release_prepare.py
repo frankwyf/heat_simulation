@@ -58,8 +58,12 @@ def _next_version(cwd: str, bump: str) -> str:
     return f"v{major}.{minor}.{patch}"
 
 
-def _collect_commits(cwd: str, commit_range: str) -> List[Tuple[str, str]]:
-    output = _run(["git", "log", "--pretty=format:%h%x09%s", commit_range], cwd)
+def _collect_commits(cwd: str, commit_range: str, since_days: int | None = None) -> List[Tuple[str, str]]:
+    cmd = ["git", "log", "--pretty=format:%h%x09%s"]
+    if since_days is not None:
+        cmd.append(f"--since={since_days}.days")
+    cmd.append(commit_range)
+    output = _run(cmd, cwd)
     rows: List[Tuple[str, str]] = []
     for line in output.splitlines():
         if "\t" not in line:
@@ -129,9 +133,14 @@ def prepare_release(
     dry_run: bool,
     bump: str | None = None,
     from_tag: str | None = None,
+    since_days: int | None = None,
 ):
     if version and bump:
         raise RuntimeError("--version and --bump cannot be used together")
+    if from_tag and since_days is not None:
+        raise RuntimeError("--from-tag and --since-days cannot be used together")
+    if since_days is not None and since_days <= 0:
+        raise RuntimeError("--since-days must be a positive integer")
 
     if not version:
         if not bump:
@@ -142,11 +151,13 @@ def prepare_release(
         if not _tag_exists(base_dir, from_tag):
             raise RuntimeError(f"from-tag does not exist: {from_tag}")
         commit_range = f"{from_tag}..HEAD"
+    elif since_days is not None:
+        commit_range = "HEAD"
     else:
         latest_tag = _latest_tag(base_dir)
         commit_range = f"{latest_tag}..HEAD" if latest_tag else "HEAD"
 
-    commits = _collect_commits(base_dir, commit_range)
+    commits = _collect_commits(base_dir, commit_range, since_days=since_days)
     grouped = _group_commits(commits)
 
     changelog_path = os.path.join(base_dir, "CHANGELOG.md")
@@ -163,7 +174,8 @@ def prepare_release(
             _run(["git", "tag", "-a", version, "-m", f"Release {version}"], base_dir)
         tag_created = True
 
-    print(f"Prepared release notes for {version} from range: {commit_range}")
+    range_text = f"last {since_days} day(s)" if since_days is not None else commit_range
+    print(f"Prepared release notes for {version} from range: {range_text}")
     print(f"Commits included: {len(commits)}")
     print(f"Changelog path: {changelog_path}")
     print(f"Tag created: {'yes' if tag_created else 'no'}")
@@ -177,6 +189,7 @@ def parse_args():
     parser.add_argument("--version", required=False, help="Release version/tag, e.g. v0.2.0")
     parser.add_argument("--bump", choices=["patch", "minor"], help="Auto-calculate next semantic version from latest tag")
     parser.add_argument("--from-tag", help="Use an explicit tag as changelog range start, e.g. v0.1.0")
+    parser.add_argument("--since-days", type=int, help="Use commits from the last N days as changelog source")
     parser.add_argument("--create-tag", action="store_true", help="Create local annotated git tag")
     parser.add_argument("--dry-run", action="store_true", help="Preview without changing files/tags")
     return parser.parse_args()
@@ -191,4 +204,5 @@ if __name__ == "__main__":
         dry_run=args.dry_run,
         bump=args.bump,
         from_tag=args.from_tag,
+        since_days=args.since_days,
     )

@@ -84,6 +84,44 @@ def save_profile_change_snapshot(before_profiles: dict, after_profiles: dict):
         json.dump(payload, f, ensure_ascii=False, indent=2)
     return path
 
+
+def list_profile_snapshots(limit: int = 30):
+    history_dir = "reports/profile_history"
+    if not os.path.exists(history_dir):
+        return []
+    snapshots = []
+    for name in os.listdir(history_dir):
+        if name.startswith("profile_change_") and name.endswith(".json"):
+            snapshots.append(os.path.join(history_dir, name))
+    snapshots.sort(reverse=True)
+    return snapshots[:limit]
+
+
+def load_snapshot(snapshot_path: str):
+    with open(snapshot_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def apply_snapshot_rollback(current_profiles: dict, snapshot_payload: dict):
+    next_profiles = json.loads(json.dumps(current_profiles))
+    for item in snapshot_payload.get("changes", []):
+        profile_name = item.get("profile")
+        parameter = item.get("parameter")
+        before_value = item.get("before")
+
+        if not profile_name or not parameter:
+            continue
+
+        if profile_name not in next_profiles:
+            next_profiles[profile_name] = {}
+
+        if before_value is None:
+            next_profiles[profile_name].pop(parameter, None)
+        else:
+            next_profiles[profile_name][parameter] = before_value
+
+    return next_profiles
+
 lang = st.sidebar.selectbox("Language / 语言", ["中文", "English"], index=0)
 text = get_text(lang)
 
@@ -280,6 +318,57 @@ with tab_optimizer:
             s = standard_cfg.get(key)
             delta_rows.append({"parameter": key, "quick": q, "standard": s})
         st.dataframe(pd.DataFrame(delta_rows), width="stretch")
+
+    st.markdown("---")
+    st.caption("Profile snapshot history")
+    snapshots = list_profile_snapshots()
+    if snapshots:
+        snapshot_df = pd.DataFrame(
+            [
+                {
+                    "snapshot": os.path.basename(path),
+                    "path": path,
+                }
+                for path in snapshots
+            ]
+        )
+        st.dataframe(snapshot_df, width="stretch")
+
+        selected_snapshot = st.selectbox("Select Snapshot", snapshots, index=0)
+        if st.button("Rollback Selected Snapshot / 回滚选中快照", width="stretch"):
+            try:
+                snapshot_payload = load_snapshot(selected_snapshot)
+                current_profiles = load_benchmark_profiles(profile_config_path)
+                rollback_profiles = apply_snapshot_rollback(current_profiles, snapshot_payload)
+
+                required_fields = [
+                    "ga_population",
+                    "ga_nochange_iter",
+                    "pso_population",
+                    "pso_iterations",
+                    "sa_num_iter",
+                    "sa_t_max",
+                    "sa_cooling_rate",
+                    "sa_max_outer_iter",
+                ]
+
+                for profile_name, cfg in rollback_profiles.items():
+                    missing = [k for k in required_fields if k not in cfg]
+                    if missing:
+                        raise ValueError(
+                            f"Profile {profile_name} missing fields after rollback: {', '.join(missing)}"
+                        )
+
+                save_benchmark_profiles(profile_config_path, rollback_profiles)
+                rollback_snapshot = save_profile_change_snapshot(current_profiles, rollback_profiles)
+                load_benchmark_profiles.clear()
+                st.success(f"Rolled back using snapshot: {os.path.basename(selected_snapshot)}")
+                if rollback_snapshot:
+                    st.caption(f"Rollback snapshot saved: {rollback_snapshot}")
+            except Exception as ex:
+                st.error(f"Failed to rollback snapshot: {ex}")
+    else:
+        st.info("No profile snapshots found yet.")
 
     if st.button("Run Benchmark / 运行基准对比", width="stretch"):
         with st.spinner("Benchmark running..."):
