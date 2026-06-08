@@ -32,11 +32,15 @@ SCENARIOS = {
 st.set_page_config(page_title="Industrial Heat Simulation Demo", page_icon="🔥", layout="wide")
 
 
+@st.cache_data(show_spinner=False)
 def load_benchmark_profiles(config_path="benchmark_profiles.json"):
     if not os.path.exists(config_path):
         return {}
-    with open(config_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        return {}
 
 lang = st.sidebar.selectbox("Language / 语言", ["中文", "English"], index=0)
 text = get_text(lang)
@@ -78,7 +82,7 @@ with st.sidebar:
 tab_system, tab_optimizer, tab_showcase = st.tabs([text.tab_system, text.tab_optimizer, text.tab_showcase])
 
 with tab_system:
-    run_clicked = st.button(text.run_button, type="primary", use_container_width=True)
+    run_clicked = st.button(text.run_button, type="primary", width="stretch")
 
     if run_clicked:
         config = SimulationConfig(
@@ -121,14 +125,14 @@ with tab_system:
         ax.legend(ncol=4, fontsize=8)
         st.pyplot(fig)
 
-        st.dataframe(plot_df, use_container_width=True)
+        st.dataframe(plot_df, width="stretch")
         csv_bytes = plot_df.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="Download CSV / 下载 CSV",
             data=csv_bytes,
             file_name="heat_simulation_result.csv",
             mime="text/csv",
-            use_container_width=True,
+            width="stretch",
         )
     else:
         st.info("Configure inputs, then run. / 请先配置参数后运行。")
@@ -148,7 +152,7 @@ with tab_optimizer:
                 row[key] = settings.get(key)
             profile_rows.append(row)
         profile_df = pd.DataFrame(profile_rows)
-        st.dataframe(profile_df, use_container_width=True)
+        st.dataframe(profile_df, width="stretch")
     else:
         st.warning("Profile config file not found. Benchmark will use internal defaults.")
 
@@ -167,9 +171,9 @@ with tab_optimizer:
             q = quick_cfg.get(key)
             s = standard_cfg.get(key)
             delta_rows.append({"parameter": key, "quick": q, "standard": s})
-        st.dataframe(pd.DataFrame(delta_rows), use_container_width=True)
+        st.dataframe(pd.DataFrame(delta_rows), width="stretch")
 
-    if st.button("Run Benchmark / 运行基准对比", use_container_width=True):
+    if st.button("Run Benchmark / 运行基准对比", width="stretch"):
         with st.spinner("Benchmark running..."):
             artifacts = run_benchmark(
                 runs_per_algo=int(runs),
@@ -182,7 +186,7 @@ with tab_optimizer:
 
         summary_df = pd.read_csv(artifacts["summary_csv"])
         st.success("Benchmark completed.")
-        st.dataframe(summary_df, use_container_width=True)
+        st.dataframe(summary_df, width="stretch")
 
         st.image(artifacts["plot_png"], caption="Benchmark Chart")
 
@@ -192,7 +196,7 @@ with tab_optimizer:
                     label=f"Download {label}",
                     data=f.read(),
                     file_name=path.split("/")[-1],
-                    use_container_width=True,
+                    width="stretch",
                 )
 
 with tab_showcase:
