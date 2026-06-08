@@ -33,6 +33,13 @@ python generate_portfolio_report.py
 
 This generates `reports/portfolio_report.md` using the latest benchmark artifacts.
 
+### 6) Run Full Local Validation
+```bash
+python validate_local_pipeline.py
+```
+
+This performs compile checks, CLI simulation, quick benchmark, and report generation in one command.
+
 The Web UI allows you to:
 - tune ambient temperature, initial condition, and wind speed
 - customize irradiance profile from 9:00-16:00
@@ -99,6 +106,13 @@ python generate_portfolio_report.py
 ```
 
 将自动读取最新一次 benchmark 的结果，生成 `reports/portfolio_report.md`。
+
+### 一键执行本地稳定性验证
+```bash
+python validate_local_pipeline.py
+```
+
+会依次执行编译检查、CLI 仿真、quick benchmark 与报告生成。
 
 ### 目录结构
 - `solve.py`: 主仿真入口（推荐）
@@ -203,6 +217,13 @@ python generate_portfolio_report.py
 
 This creates `reports/portfolio_report.md` from the latest benchmark metadata.
 
+### Full Local Validation
+```bash
+python validate_local_pipeline.py
+```
+
+Runs compile checks, CLI simulation, quick benchmark, and report generation in one reproducible step.
+
 ## Notes
 - The optimization scripts are research-style experiments and may take longer to run.
 - For fast validation, use `solve.py`.
@@ -213,3 +234,4 @@ This creates `reports/portfolio_report.md` from the latest benchmark metadata.
 - `simulation_core.py`: reusable simulation engine used by both CLI and UI
 - `benchmark_runner.py`: reproducible local benchmark and report generator
 - `generate_portfolio_report.py`: generate markdown report for portfolio presentation
+- `validate_local_pipeline.py`: one-command local validation workflow
