@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -147,6 +148,7 @@ def prepare_release(
     author: str | None = None,
     grep_text: str | None = None,
     require_nonempty: bool = False,
+    output_json: str | None = None,
 ):
     if version and bump:
         raise RuntimeError("--version and --bump cannot be used together")
@@ -196,6 +198,29 @@ def prepare_release(
             _run(["git", "tag", "-a", version, "-m", f"Release {version}"], base_dir)
         tag_created = True
 
+    output_payload = {
+        "generated_at": datetime.now().isoformat(),
+        "version": version,
+        "commit_range": commit_range,
+        "filters": {
+            "from_tag": from_tag,
+            "since_days": since_days,
+            "author": author,
+            "grep": grep_text,
+            "require_nonempty": require_nonempty,
+        },
+        "commits": [{"hash": short_hash, "subject": subject} for short_hash, subject in commits],
+        "changelog_path": changelog_path,
+        "tag_created": tag_created,
+        "dry_run": dry_run,
+    }
+    if output_json:
+        output_dir = os.path.dirname(output_json)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+        with open(output_json, "w", encoding="utf-8") as f:
+            json.dump(output_payload, f, ensure_ascii=False, indent=2)
+
     range_text = f"last {since_days} day(s)" if since_days is not None else commit_range
     print(f"Prepared release notes for {version} from range: {range_text}")
     if author:
@@ -204,6 +229,8 @@ def prepare_release(
         print(f"Keyword filter: {grep_text}")
     print(f"Commits included: {len(commits)}")
     print(f"Changelog path: {changelog_path}")
+    if output_json:
+        print(f"Output JSON: {output_json}")
     print(f"Tag created: {'yes' if tag_created else 'no'}")
     if dry_run:
         print("Dry run mode: no files/tags were changed")
@@ -219,6 +246,7 @@ def parse_args():
     parser.add_argument("--author", help="Only include commits whose author matches this pattern")
     parser.add_argument("--grep", dest="grep_text", help="Only include commits whose subject matches this keyword/regex")
     parser.add_argument("--require-nonempty", action="store_true", help="Fail if filters produce zero commits")
+    parser.add_argument("--output-json", help="Optional path to export selected commits and release filters as JSON")
     parser.add_argument("--create-tag", action="store_true", help="Create local annotated git tag")
     parser.add_argument("--dry-run", action="store_true", help="Preview without changing files/tags")
     return parser.parse_args()
@@ -237,4 +265,5 @@ if __name__ == "__main__":
         author=args.author,
         grep_text=args.grep_text,
         require_nonempty=args.require_nonempty,
+        output_json=args.output_json,
     )

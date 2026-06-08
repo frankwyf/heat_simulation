@@ -10,11 +10,12 @@ import streamlit as st
 from heat_simulation.core.paths import (
     BENCHMARK_META_GLOB,
     DEFAULT_BENCHMARK_PROFILE_RELATIVE,
+    PORTFOLIO_REPORT_PATH,
     PROFILE_HISTORY_DIR,
 )
 from heat_simulation.core.portfolio_text import get_text
 from heat_simulation.core.simulation_core import DEFAULT_IRRADIANCE, SimulationConfig, run_heat_simulation
-from heat_simulation.tools.benchmark_runner import run_benchmark
+from heat_simulation.benchmarks.benchmark_suite import run_benchmark
 
 
 SCENARIOS = {
@@ -180,6 +181,25 @@ def load_latest_benchmark_meta():
     with open(matches[-1], "r", encoding="utf-8") as f:
         return json.load(f)
 
+
+def build_report_center_assets(latest_meta: dict | None):
+    if not latest_meta:
+        return []
+
+    assets = []
+    for label, path in latest_meta.get("artifacts", {}).items():
+        if os.path.exists(path):
+            assets.append((label, path))
+
+    meta_path = latest_meta.get("artifact_paths", {}).get("meta_json")
+    if meta_path and os.path.exists(meta_path):
+        assets.append(("meta_json", meta_path))
+
+    if PORTFOLIO_REPORT_PATH.exists():
+        assets.append(("portfolio_report", str(PORTFOLIO_REPORT_PATH)))
+
+    return assets
+
 lang = st.sidebar.selectbox("Language / 语言", ["中文", "English"], index=0)
 text = get_text(lang)
 
@@ -288,6 +308,24 @@ with tab_optimizer:
         c2.metric("Best Algorithm", str(latest_meta.get("best_algorithm", "-")))
         c3.metric("Runs / Algo", str(latest_meta.get("runs_per_algo", "-")))
         st.caption(f"Generated at: {latest_meta.get('generated_at', '-')}")
+
+        report_assets = build_report_center_assets(latest_meta)
+        if report_assets:
+            st.caption("Report center")
+            for label, path in report_assets:
+                with open(path, "rb") as f:
+                    st.download_button(
+                        label=f"Download {label}",
+                        data=f.read(),
+                        file_name=os.path.basename(path),
+                        key=f"report-center-{label}-{os.path.basename(path)}",
+                        width="stretch",
+                    )
+
+            summary_csv = latest_meta.get("artifacts", {}).get("summary_csv")
+            if summary_csv and os.path.exists(summary_csv):
+                st.caption("Latest benchmark summary table")
+                st.dataframe(pd.read_csv(summary_csv), width="stretch")
 
     editable_profiles = {}
     if profiles:
@@ -478,6 +516,7 @@ with tab_optimizer:
                     label=f"Download {label}",
                     data=f.read(),
                     file_name=os.path.basename(path),
+                    key=f"benchmark-run-{label}-{os.path.basename(path)}",
                     width="stretch",
                 )
 

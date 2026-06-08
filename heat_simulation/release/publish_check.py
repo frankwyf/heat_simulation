@@ -4,6 +4,8 @@ import os
 import subprocess
 from datetime import datetime
 
+from heat_simulation.core.paths import PUBLISH_READINESS_PATH, REPORTS_DIR
+
 
 def _run(cmd: list[str], cwd: str) -> str:
     result = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
@@ -17,7 +19,7 @@ def generate_checklist(base_dir: str, out_path: str):
     git_status = _run(["git", "status", "--short"], base_dir)
     git_log = _run(["git", "log", "--oneline", "-n", "5"], base_dir)
 
-    validation_path = os.path.join(base_dir, "reports", "validation_summary.json")
+    validation_path = REPORTS_DIR / "validation_summary.json"
     validation_exists = os.path.exists(validation_path)
     validation_summary = {}
     if validation_exists:
@@ -25,7 +27,7 @@ def generate_checklist(base_dir: str, out_path: str):
             validation_summary = json.load(f)
 
     lines = []
-    lines.append("# Release Checklist")
+    lines.append("# Publish Readiness Check")
     lines.append("")
     lines.append(f"- Generated at: {datetime.now().isoformat()}")
     lines.append(f"- Branch: {git_branch or 'unknown'}")
@@ -64,9 +66,9 @@ def generate_checklist(base_dir: str, out_path: str):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Generate a release checklist from git and local validation artifacts.")
+    parser = argparse.ArgumentParser(description="Generate a publish-readiness check from git and local validation artifacts.")
     parser.add_argument("--base-dir", default=".", help="Project root path.")
-    parser.add_argument("--out", default="reports/release_checklist.md", help="Output markdown path.")
+    parser.add_argument("--out", default=str(PUBLISH_READINESS_PATH), help="Output markdown path.")
     return parser.parse_args()
 
 

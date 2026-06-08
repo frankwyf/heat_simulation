@@ -8,3 +8,5 @@ LEGACY_DIR = PROJECT_ROOT / "legacy"
 DEFAULT_BENCHMARK_PROFILE_PATH = CONFIGS_DIR / "benchmark_profiles.json"
 DEFAULT_BENCHMARK_PROFILE_RELATIVE = "configs/benchmark_profiles.json"
 BENCHMARK_META_GLOB = str(REPORTS_DIR / "benchmark_meta_*.json")
+PORTFOLIO_REPORT_PATH = REPORTS_DIR / "portfolio_report.md"
+PUBLISH_READINESS_PATH = REPORTS_DIR / "publish_readiness.md"

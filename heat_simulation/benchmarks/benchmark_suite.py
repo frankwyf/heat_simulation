@@ -239,6 +239,9 @@ def run_benchmark(
                     "summary_csv": summary_csv,
                     "plot_png": plot_png,
                 },
+                "artifact_paths": {
+                    "meta_json": meta_json,
+                },
             },
             f,
             ensure_ascii=False,

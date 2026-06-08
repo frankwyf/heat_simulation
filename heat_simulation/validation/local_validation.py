@@ -26,8 +26,10 @@ def main(base_dir: str):
         "solve.py",
         "app.py",
         "heat_simulation/core/simulation_core.py",
-        "heat_simulation/tools/benchmark_runner.py",
-        "heat_simulation/tools/generate_portfolio_report.py",
+        "heat_simulation/benchmarks/benchmark_suite.py",
+        "heat_simulation/benchmarks/portfolio_report.py",
+        "heat_simulation/release/release_notes.py",
+        "heat_simulation/release/publish_check.py",
     ]
     _run([py, "-m", "py_compile", *compile_targets], cwd=base_dir)
     _run(
@@ -46,8 +48,8 @@ def main(base_dir: str):
         ],
         cwd=base_dir,
     )
-    benchmark_output = _run([py, "-m", "heat_simulation.tools.benchmark_runner", "--runs", "1", "--ga-iter", "80", "--seed", "42", "--profile", "quick"], cwd=base_dir)
-    report_output = _run([py, "-m", "heat_simulation.tools.generate_portfolio_report"], cwd=base_dir)
+    benchmark_output = _run([py, "-m", "heat_simulation.benchmarks.benchmark_suite", "--runs", "1", "--ga-iter", "80", "--seed", "42", "--profile", "quick"], cwd=base_dir)
+    report_output = _run([py, "-m", "heat_simulation.benchmarks.portfolio_report"], cwd=base_dir)
 
     os.makedirs(REPORTS_DIR, exist_ok=True)
     validation_path = REPORTS_DIR / "validation_summary.json"

@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from heat_simulation.core.paths import BENCHMARK_META_GLOB, REPORTS_DIR
+from heat_simulation.core.paths import BENCHMARK_META_GLOB, PORTFOLIO_REPORT_PATH
 
 
 def _latest_meta(pattern: str = BENCHMARK_META_GLOB) -> str:
@@ -86,7 +86,7 @@ def build_report(meta_path: str, output_path: str):
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate a portfolio-friendly markdown report from latest benchmark artifacts.")
     parser.add_argument("--meta", default=None, help="Path to benchmark meta json. Defaults to latest file in reports/.")
-    parser.add_argument("--out", default=str(REPORTS_DIR / "portfolio_report.md"), help="Output markdown file path.")
+    parser.add_argument("--out", default=str(PORTFOLIO_REPORT_PATH), help="Output markdown file path.")
     return parser.parse_args()
 
 
