@@ -1,3 +1,6 @@
+import json
+import os
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
@@ -27,6 +30,13 @@ SCENARIOS = {
 
 
 st.set_page_config(page_title="Industrial Heat Simulation Demo", page_icon="🔥", layout="wide")
+
+
+def load_benchmark_profiles(config_path="benchmark_profiles.json"):
+    if not os.path.exists(config_path):
+        return {}
+    with open(config_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 lang = st.sidebar.selectbox("Language / 语言", ["中文", "English"], index=0)
 text = get_text(lang)
@@ -125,10 +135,39 @@ with tab_system:
 
 with tab_optimizer:
     st.write("Run local benchmark for GA/PSO/SA and generate reproducible report artifacts.")
+    profile_config_path = st.text_input("Profile Config Path", value="benchmark_profiles.json")
+    profiles = load_benchmark_profiles(profile_config_path)
+
+    if profiles:
+        st.caption("Benchmark profile settings")
+        profile_rows = []
+        all_keys = sorted({k for p in profiles.values() for k in p.keys()})
+        for profile_name, settings in profiles.items():
+            row = {"profile": profile_name}
+            for key in all_keys:
+                row[key] = settings.get(key)
+            profile_rows.append(row)
+        profile_df = pd.DataFrame(profile_rows)
+        st.dataframe(profile_df, use_container_width=True)
+    else:
+        st.warning("Profile config file not found. Benchmark will use internal defaults.")
+
     profile = st.selectbox("Benchmark Profile", ["quick", "standard"], index=0)
     runs = st.slider("Runs Per Algorithm", min_value=1, max_value=5, value=2, step=1)
     ga_iter = st.slider("GA Max Iterations", min_value=80, max_value=500, value=200, step=20)
     seed = st.number_input("Base Seed", min_value=1, max_value=99999, value=42, step=1)
+    runtime_cap = st.slider("Per-Algorithm Runtime Cap (s)", min_value=1, max_value=60, value=12, step=1)
+
+    if profiles and "quick" in profiles and "standard" in profiles:
+        st.caption("quick vs standard delta")
+        quick_cfg = profiles["quick"]
+        standard_cfg = profiles["standard"]
+        delta_rows = []
+        for key in sorted(set(quick_cfg.keys()) | set(standard_cfg.keys())):
+            q = quick_cfg.get(key)
+            s = standard_cfg.get(key)
+            delta_rows.append({"parameter": key, "quick": q, "standard": s})
+        st.dataframe(pd.DataFrame(delta_rows), use_container_width=True)
 
     if st.button("Run Benchmark / 运行基准对比", use_container_width=True):
         with st.spinner("Benchmark running..."):
@@ -137,6 +176,8 @@ with tab_optimizer:
                 max_iteration_ga=int(ga_iter),
                 base_seed=int(seed),
                 profile=profile,
+                max_runtime_s=float(runtime_cap),
+                profile_config_path=profile_config_path,
             )
 
         summary_df = pd.read_csv(artifacts["summary_csv"])
