@@ -43,6 +43,17 @@ DEFAULT_PROFILE_SETTINGS = {
     },
 }
 
+REQUIRED_PROFILE_KEYS = [
+    "ga_population",
+    "ga_nochange_iter",
+    "pso_population",
+    "pso_iterations",
+    "sa_num_iter",
+    "sa_t_max",
+    "sa_cooling_rate",
+    "sa_max_outer_iter",
+]
+
 
 @dataclass
 class RunResult:
@@ -70,6 +81,15 @@ def _load_profiles(config_path: str) -> dict:
         base.update(values)
         merged[name] = base
     return merged
+
+
+def _validate_profile_cfg(profile_name: str, profile_cfg: dict):
+    missing = [k for k in REQUIRED_PROFILE_KEYS if k not in profile_cfg]
+    if missing:
+        raise ValueError(
+            f"Profile '{profile_name}' missing required keys: {', '.join(missing)}. "
+            "Please update benchmark_profiles.json."
+        )
 
 
 def _run_ga_once(max_iteration: int, seed: int, profile_cfg: dict, max_runtime_s: float | None = None) -> RunResult:
@@ -173,6 +193,7 @@ def run_benchmark(
     if profile not in profiles:
         raise ValueError(f"Unknown profile '{profile}'. Available: {', '.join(sorted(profiles.keys()))}")
     profile_cfg = profiles[profile]
+    _validate_profile_cfg(profile, profile_cfg)
 
     runners: Dict[str, Callable[[int], RunResult]] = {
         "GA": lambda seed: _run_ga_once(max_iteration=max_iteration_ga, seed=seed, profile_cfg=profile_cfg, max_runtime_s=max_runtime_s),
