@@ -89,8 +89,11 @@ class PSO:
        f2_list：粒子的函数评估结果
     """
 
-    def __init__(self):
-        self.pop = 500
+    def __init__(self, pop=500, iterations=100, verbose=True, show_plot=True):
+        self.pop = pop
+        self.iterations = iterations
+        self.verbose = verbose
+        self.show_plot = show_plot
         self.w = 0.5
         self.c1 = 1.5
         self.c2 = 1.5
@@ -211,35 +214,39 @@ class PSO:
         self.gbest = self.pbest[k]
 
     def run(self):
-        print("PSO算法开始运行：")
+        if self.verbose:
+            print("PSO算法开始运行：")
         # 记录开始时间
         start_time = time.time()
         self.m1()
         # 种群大小
-        for i in range(100):
+        for i in range(self.iterations):
             self.m2()
             self.m3()
-            print(self.gbest)
+            if self.verbose:
+                print(self.gbest)
             t = abs(aim_function(self.gbest))
             # 如果评价函数大于5，重新开始
-            print(aim_function(self.x[i]))
+            if self.verbose:
+                print(aim_function(self.x[i]))
             self.gbest_hist.append(t)
         # 记录结束时间
         end_time = time.time()
         # 计算算法的运行时间
         run_time = end_time - start_time
 
-        plt.plot(self.gbest_hist)
-        # 在图上添加文字说明
-        plt.title("PSO算法--迭代次数与最佳评估函数值的关系" + "\n" + "最佳评估函数值为：" + str(self.gbest_hist[-1]))
-        plt.xlabel("迭代次数" + "运行时间为：" + str(run_time))
-        plt.ylabel("最佳评估函数值" + "\n" + "平均值：" + str(np.mean(self.gbest_hist)))
-        plt.show()
+        if self.show_plot:
+            plt.plot(self.gbest_hist)
+            # 在图上添加文字说明
+            plt.title("PSO算法--迭代次数与最佳评估函数值的关系" + "\n" + "最佳评估函数值为：" + str(self.gbest_hist[-1]))
+            plt.xlabel("迭代次数" + "运行时间为：" + str(run_time))
+            plt.ylabel("最佳评估函数值" + "\n" + "平均值：" + str(np.mean(self.gbest_hist)))
+            plt.show()
         return run_time
 
 
 if __name__ == "__main__":
-    pso = PSO()
+    pso = PSO(pop=500, iterations=100, verbose=True, show_plot=True)
     pso.run()
 
     # 重复运行多次，记录每一次的最优解和运行时间
@@ -247,7 +254,7 @@ if __name__ == "__main__":
     times = []
     solutions = []
     for i in range(20):
-        pso = PSO()
+        pso = PSO(pop=500, iterations=100, verbose=True, show_plot=True)
         x = pso.run()
         # 记录最优评估函数值
         best.append(pso.gbest_hist[-1])

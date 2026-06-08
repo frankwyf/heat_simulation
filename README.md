@@ -2,6 +2,43 @@
 
 A cleaned and open-source-ready simulation project for heat transfer modeling and metaheuristic optimization.
 
+## Quick Start (Showcase Friendly)
+
+### 1) Install
+```bash
+pip install -r requirements.txt
+```
+
+### 2) Run CLI Simulation
+```bash
+python solve.py --no-plot --save-path result.png
+```
+
+### 3) Run Interactive Web UI
+```bash
+streamlit run app.py
+```
+
+### 4) Run Local Optimizer Benchmark (GA/PSO/SA)
+```bash
+python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
+```
+
+Artifacts will be generated under `reports/` as CSV + PNG + JSON.
+
+### 5) Generate Portfolio Markdown Report
+```bash
+python generate_portfolio_report.py
+```
+
+This generates `reports/portfolio_report.md` using the latest benchmark artifacts.
+
+The Web UI allows you to:
+- tune ambient temperature, initial condition, and wind speed
+- customize irradiance profile from 9:00-16:00
+- visualize thermal responses instantly
+- export results as CSV for further analysis/reporting
+
 ## 中文说明（Chinese）
 
 ### 项目简介
@@ -31,6 +68,37 @@ python solve.py --no-plot --save-path result.png
 参数说明：
 - `--no-plot`：不弹出图形窗口（适合服务器/CI）
 - `--save-path`：将结果图像保存到指定路径
+- `--initial-temp-c`：设置初始温度（摄氏度）
+- `--ambient-temp-c`：设置环境温度（摄氏度）
+- `--wind-speed`：设置风速（m/s）
+
+### 运行交互式 UI（推荐用于作品展示）
+```bash
+streamlit run app.py
+```
+
+交互式 UI 功能：
+- 调整环境参数并即时查看温度响应曲线
+- 自定义全天辐照输入，展示工况变化分析能力
+- 导出 CSV 结果，便于论文/汇报二次处理
+
+### 运行本地算法基准对比
+```bash
+python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
+```
+
+报告将输出到 `reports/`，包含：
+- 明细 CSV
+- 汇总 CSV
+- 对比图 PNG
+- 元信息 JSON
+
+### 生成作品集报告（Markdown）
+```bash
+python generate_portfolio_report.py
+```
+
+将自动读取最新一次 benchmark 的结果，生成 `reports/portfolio_report.md`。
 
 ### 目录结构
 - `solve.py`: 主仿真入口（推荐）
@@ -70,6 +138,11 @@ python solve.py --no-plot --save-path result.png
 - `--no-plot`: GUI ウィンドウを開かずに実行
 - `--save-path`: 出力図を保存
 
+### インタラクティブ UI
+```bash
+streamlit run app.py
+```
+
 ---
 
 ## English
@@ -104,7 +177,39 @@ python solve.py --no-plot --save-path result.png
 Options:
 - `--no-plot`: run without opening a GUI window
 - `--save-path`: save the generated figure
+- `--initial-temp-c`: initial temperature in Celsius
+- `--ambient-temp-c`: ambient temperature in Celsius
+- `--wind-speed`: wind speed in m/s
+
+### Interactive UI
+```bash
+streamlit run app.py
+```
+
+The UI is designed for open-source portfolio demos and technical interviews.
+
+### Local Benchmark Pipeline
+```bash
+python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
+```
+
+This generates report artifacts in `reports/` for reproducible algorithm comparison.
+Use `--profile standard` for heavier runs.
+
+### Generate Portfolio Report
+```bash
+python generate_portfolio_report.py
+```
+
+This creates `reports/portfolio_report.md` from the latest benchmark metadata.
 
 ## Notes
 - The optimization scripts are research-style experiments and may take longer to run.
 - For fast validation, use `solve.py`.
+
+## Project Entry Points
+- `solve.py`: command-line simulation entrypoint
+- `app.py`: interactive showcase UI entrypoint
+- `simulation_core.py`: reusable simulation engine used by both CLI and UI
+- `benchmark_runner.py`: reproducible local benchmark and report generator
+- `generate_portfolio_report.py`: generate markdown report for portfolio presentation

@@ -94,10 +94,14 @@ def adjust(xs):
         return xs
 
 
-def main():
+def main(num_iter=None, cooling_rate=None, t_max=None, t_min=None, show_plot=True, verbose=True, max_outer_iter=500):
     # 记录开始时间
     start_time = time.time()
     count = 0  # 记录迭代次数
+    num_local = num if num_iter is None else num_iter
+    r_local = R if cooling_rate is None else cooling_rate
+    t_max_local = T_max if t_max is None else t_max
+    t_min_local = T_min if t_min is None else t_min
 
     # 随机生成初始状态
     xs = [np.random.uniform(xs_bounds[i][0], xs_bounds[i][1]) for i in range(4)]
@@ -112,13 +116,13 @@ def main():
     T_array = []
 
     # 初始化温度为最大温度
-    T = T_max
+    T = t_max_local
 
     # 迭代直到温度达到最小温度
-    while T > T_min:
+    while T > t_min_local:
         count += 1
         # 对每个变量进行更新状态
-        for i in range(num):
+        for i in range(num_local):
             # 生成新的状态
             xs_temp = [np.random.uniform(xs_bounds[i][0], xs_bounds[i][1]) for i in range(4)]
 
@@ -160,12 +164,12 @@ def main():
                     xs = xs_temp
 
         # 如果此时的评估大于1.785且温度小于初始温度的0.1%，则升高温度
-        if Best_A > 1.76 and T < T_max * 0.001:
+        if Best_A > 1.76 and T < t_max_local * 0.001:
             # 升高温度
             T = T * 1.00001
         else:
             # 降低温度
-            T = R * T
+            T = r_local * T
 
         # 存储每次迭代后的温度值
         T_array.append(T)
@@ -175,28 +179,30 @@ def main():
 
         # 如果迭代次数超过150次且最优目标函数值小于1.8,停止迭代
         if count > 100 and Best_A < 1.78:
-            T = T_min
+            T = t_min_local
         # 如果迭代次数超过200次且最优目标函数值小于1.81,停止迭代
         elif count > 200 and Best_A < 1.79:
-            T = T_min
+            T = t_min_local
         # 如果迭代次数超过300次且最优目标函数值小于1.82,停止迭代
         elif count > 300 and Best_A < 1.80:
-            T = T_min
+            T = t_min_local
         # 如果迭代次数超过400次且最优目标函数值小于1.83,停止迭代
         elif count > 400 and Best_A < 1.83:
-            T = T_min
+            T = t_min_local
         # 如果迭代次数超过500次，停止迭代
-        elif count > 500:
-            T = T_min
+        elif count > max_outer_iter:
+            T = t_min_local
 
 
     # 记录结束时间
     end_time = time.time()
     # 计算程序运行时间
     time_consume= end_time - start_time
-    print("程序运行时间：", time_consume, "s")
+    if verbose:
+        print("程序运行时间：", time_consume, "s")
     # 绘制目标函数值和温度的变化曲线
-    Plot(Best_array, T_array)
+    if show_plot:
+        Plot(Best_array, T_array)
 
     # 返回最优的目标函数值和对应的变量值
     return Best_A, xs, time_consume

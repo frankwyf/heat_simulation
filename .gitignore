@@ -12,6 +12,9 @@ venv/
 *.jpg
 *.jpeg
 *.pdf
+reports/*.csv
+reports/*.json
+reports/*.png
 
 # IDE and OS files
 .vscode/

@@ -111,9 +111,10 @@ class GA_optimizer():
                 if best_individual.fitness() > 2:
                     # 如果最终结果太差（大于2），将重复次数减半，继续迭代
                     nochange_iter_running = self.nochange_iter / 2  # 重复次数减半
-                    print("最优解过差！调用蚁群算法优化整个种群！")
+                    if verbose:
+                        print("最优解过差！调用蚁群算法优化整个种群！")
                     # 调用蚁群算法优化整个种群
-                    population = ant_colony(population)
+                    population = ant_colony(population, verbose=verbose)
                 else:
                     # 停止迭代
                     break
@@ -124,7 +125,7 @@ class GA_optimizer():
                 population = sorted(population, key=lambda x: x.fitness())  # 按fitnesses从小到大排序
                 # 保留较优的前一半个体，运用蚁群算法优化剩下的个体
                 population = population[:int(self.N * self.last_generation_left)] \
-                             + ant_colony(population[int(self.N * (1 - self.last_generation_left)):])
+                             + ant_colony(population[int(self.N * (1 - self.last_generation_left)):], verbose=verbose)
 
                 # 重置计数器
                 repeated_generations = 0
@@ -155,8 +156,9 @@ class GA_optimizer():
         return best_individual, fitness_history
 
 
-def ant_colony(population):
-    print('调用蚁群算法优化！')
+def ant_colony(population, verbose=True):
+    if verbose:
+        print('调用蚁群算法优化！')
     pheromone_matrix = np.ones((len(population), len(population)))  # 初始化信息素矩阵
     num_ants = len(population)  # 蚂蚁数量等于种群数量三倍
     num_iterations = 100  # 迭代次数
@@ -169,8 +171,8 @@ def ant_colony(population):
             selected_individual = population[ant % len(population)]
             selected_index = population.index(selected_individual)  # 获取选中个体的索引
             pheromone = pheromone_matrix[selected_index, selected_index]  # 获取信息素值
-            attractiveness = np.exp(-selected_individual.fitness() * beta,
-                                    where=(selected_individual.fitness() * beta < 0)) + 1  # 计算个体的吸引力
+            clamped_term = max(-selected_individual.fitness() * beta, -700.0)
+            attractiveness = np.exp(clamped_term) + 1  # 计算个体的吸引力
 
             # 对数计算
             log_pheromone = np.log(np.where(pheromone > 0, pheromone, 1e-10))
