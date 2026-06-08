@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import subprocess
 from datetime import datetime
 from typing import Dict, List, Tuple
@@ -30,6 +31,31 @@ def _latest_tag(cwd: str) -> str:
         return _run(["git", "describe", "--tags", "--abbrev=0"], cwd)
     except Exception:
         return ""
+
+
+def _parse_semver(tag: str):
+    m = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", tag.strip())
+    if not m:
+        return None
+    return int(m.group(1)), int(m.group(2)), int(m.group(3))
+
+
+def _next_version(cwd: str, bump: str) -> str:
+    latest = _latest_tag(cwd)
+    parsed = _parse_semver(latest) if latest else (0, 0, 0)
+    if parsed is None:
+        raise RuntimeError(f"Latest tag is not semver-compatible: {latest}")
+
+    major, minor, patch = parsed
+    if bump == "patch":
+        patch += 1
+    elif bump == "minor":
+        minor += 1
+        patch = 0
+    else:
+        raise RuntimeError(f"Unsupported bump mode: {bump}")
+
+    return f"v{major}.{minor}.{patch}"
 
 
 def _collect_commits(cwd: str, commit_range: str) -> List[Tuple[str, str]]:
@@ -96,7 +122,12 @@ def _tag_exists(cwd: str, tag: str) -> bool:
         return False
 
 
-def prepare_release(base_dir: str, version: str, create_tag: bool, dry_run: bool):
+def prepare_release(base_dir: str, version: str, create_tag: bool, dry_run: bool, bump: str | None = None):
+    if not version:
+        if not bump:
+            raise RuntimeError("Either --version or --bump must be provided")
+        version = _next_version(base_dir, bump)
+
     latest_tag = _latest_tag(base_dir)
     commit_range = f"{latest_tag}..HEAD" if latest_tag else "HEAD"
     commits = _collect_commits(base_dir, commit_range)
@@ -127,7 +158,8 @@ def prepare_release(base_dir: str, version: str, create_tag: bool, dry_run: bool
 def parse_args():
     parser = argparse.ArgumentParser(description="Prepare changelog and optional local git tag for release.")
     parser.add_argument("--base-dir", default=".", help="Project root path")
-    parser.add_argument("--version", required=True, help="Release version/tag, e.g. v0.2.0")
+    parser.add_argument("--version", required=False, help="Release version/tag, e.g. v0.2.0")
+    parser.add_argument("--bump", choices=["patch", "minor"], help="Auto-calculate next semantic version from latest tag")
     parser.add_argument("--create-tag", action="store_true", help="Create local annotated git tag")
     parser.add_argument("--dry-run", action="store_true", help="Preview without changing files/tags")
     return parser.parse_args()
@@ -140,4 +172,5 @@ if __name__ == "__main__":
         version=args.version,
         create_tag=args.create_tag,
         dry_run=args.dry_run,
+        bump=args.bump,
     )
