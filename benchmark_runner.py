@@ -33,7 +33,7 @@ def _safe_seed(seed: int):
     np.random.seed(seed)
 
 
-def _run_ga_once(max_iteration: int, seed: int, profile: str) -> RunResult:
+def _run_ga_once(max_iteration: int, seed: int, profile: str, max_runtime_s: float | None = None) -> RunResult:
     _safe_seed(seed)
     ga_population = 140 if profile == "quick" else 180
     ga_nochange_iter = 120 if profile == "quick" else 150
@@ -47,25 +47,25 @@ def _run_ga_once(max_iteration: int, seed: int, profile: str) -> RunResult:
         history_convert=lambda x: x,
     )
     t0 = time.time()
-    _, fitness_history = optimizer.optimize(max_iteration=max_iteration, verbose=False)
+    _, fitness_history = optimizer.optimize(max_iteration=max_iteration, verbose=False, max_wall_time_s=max_runtime_s)
     elapsed = time.time() - t0
     return RunResult("GA", 0, float(min(fitness_history)), elapsed)
 
 
-def _run_pso_once(seed: int, profile: str) -> RunResult:
+def _run_pso_once(seed: int, profile: str, max_runtime_s: float | None = None) -> RunResult:
     _safe_seed(seed)
     pop = 120 if profile == "quick" else 220
     iterations = 70 if profile == "quick" else 100
     pso = PSO(pop=pop, iterations=iterations, verbose=False, show_plot=False)
     t0 = time.time()
-    elapsed = pso.run()
+    elapsed = pso.run(max_wall_time_s=max_runtime_s)
     if elapsed <= 0:
         elapsed = time.time() - t0
     best = float(pso.gbest_hist[-1]) if pso.gbest_hist else float("inf")
     return RunResult("PSO", 0, best, float(elapsed))
 
 
-def _run_sa_once(seed: int, profile: str) -> RunResult:
+def _run_sa_once(seed: int, profile: str, max_runtime_s: float | None = None) -> RunResult:
     _safe_seed(seed)
     if profile == "quick":
         sa_kwargs = {
@@ -82,7 +82,7 @@ def _run_sa_once(seed: int, profile: str) -> RunResult:
             "max_outer_iter": 420,
         }
     t0 = time.time()
-    best, _, elapsed = sa_module.main(show_plot=False, verbose=False, **sa_kwargs)
+    best, _, elapsed = sa_module.main(show_plot=False, verbose=False, max_wall_time_s=max_runtime_s, **sa_kwargs)
     if elapsed <= 0:
         elapsed = time.time() - t0
     return RunResult("SA", 0, float(best), float(elapsed))
@@ -129,15 +129,15 @@ def _plot_report(results_df: pd.DataFrame, out_png: str):
     plt.close(fig)
 
 
-def run_benchmark(runs_per_algo: int, max_iteration_ga: int, base_seed: int = 42, profile: str = "quick") -> Dict[str, str]:
+def run_benchmark(runs_per_algo: int, max_iteration_ga: int, base_seed: int = 42, profile: str = "quick", max_runtime_s: float | None = None) -> Dict[str, str]:
     os.makedirs("reports", exist_ok=True)
 
     warnings.filterwarnings("ignore", message="FigureCanvasAgg is non-interactive")
 
     runners: Dict[str, Callable[[int], RunResult]] = {
-        "GA": lambda seed: _run_ga_once(max_iteration=max_iteration_ga, seed=seed, profile=profile),
-        "PSO": lambda seed: _run_pso_once(seed=seed, profile=profile),
-        "SA": lambda seed: _run_sa_once(seed=seed, profile=profile),
+        "GA": lambda seed: _run_ga_once(max_iteration=max_iteration_ga, seed=seed, profile=profile, max_runtime_s=max_runtime_s),
+        "PSO": lambda seed: _run_pso_once(seed=seed, profile=profile, max_runtime_s=max_runtime_s),
+        "SA": lambda seed: _run_sa_once(seed=seed, profile=profile, max_runtime_s=max_runtime_s),
     }
 
     all_results: List[RunResult] = []
@@ -169,6 +169,7 @@ def run_benchmark(runs_per_algo: int, max_iteration_ga: int, base_seed: int = 42
                 "runs_per_algo": runs_per_algo,
                 "max_iteration_ga": max_iteration_ga,
                 "profile": profile,
+                "max_runtime_s": max_runtime_s,
                 "best_algorithm": summary_df.iloc[0]["algorithm"] if not summary_df.empty else None,
                 "artifacts": {
                     "details_csv": details_csv,
@@ -195,6 +196,7 @@ def parse_args():
     parser.add_argument("--ga-iter", type=int, default=200, help="Max GA iterations for each run.")
     parser.add_argument("--seed", type=int, default=42, help="Base random seed.")
     parser.add_argument("--profile", choices=["quick", "standard"], default="quick", help="quick for stable local checks, standard for heavier runs.")
+    parser.add_argument("--max-runtime-s", type=float, default=12.0, help="Optional per-algorithm wall-time cap in seconds.")
     return parser.parse_args()
 
 
@@ -205,6 +207,7 @@ if __name__ == "__main__":
         max_iteration_ga=max(50, args.ga_iter),
         base_seed=args.seed,
         profile=args.profile,
+        max_runtime_s=args.max_runtime_s if args.max_runtime_s > 0 else None,
     )
     print("Benchmark finished. Artifacts:")
     for k, v in artifacts.items():

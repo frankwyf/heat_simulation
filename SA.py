@@ -94,7 +94,7 @@ def adjust(xs):
         return xs
 
 
-def main(num_iter=None, cooling_rate=None, t_max=None, t_min=None, show_plot=True, verbose=True, max_outer_iter=500):
+def main(num_iter=None, cooling_rate=None, t_max=None, t_min=None, show_plot=True, verbose=True, max_outer_iter=500, max_wall_time_s=None):
     # 记录开始时间
     start_time = time.time()
     count = 0  # 记录迭代次数
@@ -120,6 +120,10 @@ def main(num_iter=None, cooling_rate=None, t_max=None, t_min=None, show_plot=Tru
 
     # 迭代直到温度达到最小温度
     while T > t_min_local:
+        if max_wall_time_s is not None and (time.time() - start_time) > max_wall_time_s:
+            if verbose:
+                print("达到运行时限，提前结束 SA 优化")
+            break
         count += 1
         # 对每个变量进行更新状态
         for i in range(num_local):

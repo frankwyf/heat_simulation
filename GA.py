@@ -81,7 +81,7 @@ class GA_optimizer():
 
         return new_population  # 返回新种群列表
 
-    def optimize(self, max_iteration, verbose=True):
+    def optimize(self, max_iteration, verbose=True, max_wall_time_s=None):
         # max_iteration: 最大迭代次数
         # verbose: 是否有print
 
@@ -100,8 +100,13 @@ class GA_optimizer():
         nochange_iter_running = self.nochange_iter
         fitness_history = []
         repeated_generations = 0
+        start_time = time.time()
 
         for i in range(max_iteration):
+            if max_wall_time_s is not None and (time.time() - start_time) > max_wall_time_s:
+                if verbose:
+                    print("达到运行时限，提前结束 GA 优化")
+                break
             fitness_history.append(self.history_convert(best_individual.fitness()))  # 记录历史最优个体的适应度
             # 停止迭代条件
             if nochange_iter_running < 0:

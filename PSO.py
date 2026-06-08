@@ -213,7 +213,7 @@ class PSO:
                 k = i
         self.gbest = self.pbest[k]
 
-    def run(self):
+    def run(self, max_wall_time_s=None):
         if self.verbose:
             print("PSO算法开始运行：")
         # 记录开始时间
@@ -221,6 +221,10 @@ class PSO:
         self.m1()
         # 种群大小
         for i in range(self.iterations):
+            if max_wall_time_s is not None and (time.time() - start_time) > max_wall_time_s:
+                if self.verbose:
+                    print("达到运行时限，提前结束 PSO 优化")
+                break
             self.m2()
             self.m3()
             if self.verbose:
