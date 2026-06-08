@@ -20,6 +20,7 @@ streamlit run app.py
 ```
 
 The optimizer tab supports editing `benchmark_profiles.json` directly in the UI and saving updates.
+Each save writes a change snapshot under `reports/profile_history/` for traceability.
 
 ### 4) Run Local Optimizer Benchmark (GA/PSO/SA)
 ```bash
@@ -134,6 +135,7 @@ python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
 - 元信息 JSON
 
 `benchmark_profiles.json` 用于管理 quick/standard 的参数配置，方便版本化追踪调参。
+每次在 UI 保存配置时，会在 `reports/profile_history/` 生成参数差异快照。
 
 ### 生成作品集报告（Markdown）
 ```bash
@@ -275,6 +277,7 @@ python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
 This generates report artifacts in `reports/` for reproducible algorithm comparison.
 Use `--profile standard` for heavier runs.
 Profile settings are versioned in `benchmark_profiles.json`.
+Every UI save creates a diff snapshot in `reports/profile_history/`.
 
 ### Generate Portfolio Report
 ```bash

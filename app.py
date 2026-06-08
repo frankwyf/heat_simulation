@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -46,6 +47,42 @@ def load_benchmark_profiles(config_path="benchmark_profiles.json"):
 def save_benchmark_profiles(config_path: str, profiles: dict):
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(profiles, f, ensure_ascii=False, indent=2)
+
+
+def save_profile_change_snapshot(before_profiles: dict, after_profiles: dict):
+    changes = []
+    profile_names = sorted(set(before_profiles.keys()) | set(after_profiles.keys()))
+    for profile_name in profile_names:
+        before_cfg = before_profiles.get(profile_name, {})
+        after_cfg = after_profiles.get(profile_name, {})
+        keys = sorted(set(before_cfg.keys()) | set(after_cfg.keys()))
+        for key in keys:
+            before_v = before_cfg.get(key)
+            after_v = after_cfg.get(key)
+            if before_v != after_v:
+                changes.append(
+                    {
+                        "profile": profile_name,
+                        "parameter": key,
+                        "before": before_v,
+                        "after": after_v,
+                    }
+                )
+
+    if not changes:
+        return None
+
+    os.makedirs("reports/profile_history", exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = f"reports/profile_history/profile_change_{ts}.json"
+    payload = {
+        "saved_at": datetime.now().isoformat(),
+        "change_count": len(changes),
+        "changes": changes,
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    return path
 
 lang = st.sidebar.selectbox("Language / 语言", ["中文", "English"], index=0)
 text = get_text(lang)
@@ -181,6 +218,7 @@ with tab_optimizer:
 
         if st.button("Save Profile Config / 保存配置", width="stretch"):
             try:
+                previous_profiles = json.loads(json.dumps(profiles))
                 for profile_name, cfg in editable_profiles.items():
                     missing = [k for k in required_fields if k not in cfg]
                     if missing:
@@ -202,8 +240,11 @@ with tab_optimizer:
                         cfg[float_key] = float(cfg[float_key])
 
                 save_benchmark_profiles(profile_config_path, editable_profiles)
+                snapshot_path = save_profile_change_snapshot(previous_profiles, editable_profiles)
                 load_benchmark_profiles.clear()
                 st.success("Profile config saved successfully.")
+                if snapshot_path:
+                    st.caption(f"Profile snapshot saved: {snapshot_path}")
             except Exception as ex:
                 st.error(f"Failed to save profile config: {ex}")
 
