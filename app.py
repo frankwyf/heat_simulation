@@ -335,9 +335,24 @@ with tab_optimizer:
         st.dataframe(snapshot_df, width="stretch")
 
         selected_snapshot = st.selectbox("Select Snapshot", snapshots, index=0)
+        selected_snapshot_payload = None
+        try:
+            selected_snapshot_payload = load_snapshot(selected_snapshot)
+            c1, c2 = st.columns(2)
+            c1.metric("Snapshot Saved At", str(selected_snapshot_payload.get("saved_at", "-")))
+            c2.metric("Change Count", int(selected_snapshot_payload.get("change_count", 0)))
+
+            if selected_snapshot_payload.get("changes"):
+                st.caption("Selected snapshot diff")
+                st.dataframe(pd.DataFrame(selected_snapshot_payload["changes"]), width="stretch")
+            else:
+                st.info("Selected snapshot has no change details.")
+        except Exception as ex:
+            st.warning(f"Failed to preview snapshot: {ex}")
+
         if st.button("Rollback Selected Snapshot / 回滚选中快照", width="stretch"):
             try:
-                snapshot_payload = load_snapshot(selected_snapshot)
+                snapshot_payload = selected_snapshot_payload if selected_snapshot_payload is not None else load_snapshot(selected_snapshot)
                 current_profiles = load_benchmark_profiles(profile_config_path)
                 rollback_profiles = apply_snapshot_rollback(current_profiles, snapshot_payload)
 

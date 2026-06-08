@@ -58,10 +58,20 @@ def _next_version(cwd: str, bump: str) -> str:
     return f"v{major}.{minor}.{patch}"
 
 
-def _collect_commits(cwd: str, commit_range: str, since_days: int | None = None) -> List[Tuple[str, str]]:
+def _collect_commits(
+    cwd: str,
+    commit_range: str,
+    since_days: int | None = None,
+    author: str | None = None,
+    grep_text: str | None = None,
+) -> List[Tuple[str, str]]:
     cmd = ["git", "log", "--pretty=format:%h%x09%s"]
     if since_days is not None:
         cmd.append(f"--since={since_days}.days")
+    if author:
+        cmd.append(f"--author={author}")
+    if grep_text:
+        cmd.append(f"--grep={grep_text}")
     cmd.append(commit_range)
     output = _run(cmd, cwd)
     rows: List[Tuple[str, str]] = []
@@ -134,6 +144,8 @@ def prepare_release(
     bump: str | None = None,
     from_tag: str | None = None,
     since_days: int | None = None,
+    author: str | None = None,
+    grep_text: str | None = None,
 ):
     if version and bump:
         raise RuntimeError("--version and --bump cannot be used together")
@@ -157,7 +169,13 @@ def prepare_release(
         latest_tag = _latest_tag(base_dir)
         commit_range = f"{latest_tag}..HEAD" if latest_tag else "HEAD"
 
-    commits = _collect_commits(base_dir, commit_range, since_days=since_days)
+    commits = _collect_commits(
+        base_dir,
+        commit_range,
+        since_days=since_days,
+        author=author,
+        grep_text=grep_text,
+    )
     grouped = _group_commits(commits)
 
     changelog_path = os.path.join(base_dir, "CHANGELOG.md")
@@ -176,6 +194,10 @@ def prepare_release(
 
     range_text = f"last {since_days} day(s)" if since_days is not None else commit_range
     print(f"Prepared release notes for {version} from range: {range_text}")
+    if author:
+        print(f"Author filter: {author}")
+    if grep_text:
+        print(f"Keyword filter: {grep_text}")
     print(f"Commits included: {len(commits)}")
     print(f"Changelog path: {changelog_path}")
     print(f"Tag created: {'yes' if tag_created else 'no'}")
@@ -190,6 +212,8 @@ def parse_args():
     parser.add_argument("--bump", choices=["patch", "minor"], help="Auto-calculate next semantic version from latest tag")
     parser.add_argument("--from-tag", help="Use an explicit tag as changelog range start, e.g. v0.1.0")
     parser.add_argument("--since-days", type=int, help="Use commits from the last N days as changelog source")
+    parser.add_argument("--author", help="Only include commits whose author matches this pattern")
+    parser.add_argument("--grep", dest="grep_text", help="Only include commits whose subject matches this keyword/regex")
     parser.add_argument("--create-tag", action="store_true", help="Create local annotated git tag")
     parser.add_argument("--dry-run", action="store_true", help="Preview without changing files/tags")
     return parser.parse_args()
@@ -205,4 +229,6 @@ if __name__ == "__main__":
         bump=args.bump,
         from_tag=args.from_tag,
         since_days=args.since_days,
+        author=args.author,
+        grep_text=args.grep_text,
     )
