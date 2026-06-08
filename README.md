@@ -19,6 +19,8 @@ python solve.py --no-plot --save-path result.png
 streamlit run app.py
 ```
 
+The optimizer tab supports editing `benchmark_profiles.json` directly in the UI and saving updates.
+
 ### 4) Run Local Optimizer Benchmark (GA/PSO/SA)
 ```bash
 python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
@@ -54,6 +56,12 @@ python release_prepare.py --version v0.2.0 --create-tag
 ```
 
 Use `--dry-run` to preview changes before writing `CHANGELOG.md` or creating tag.
+
+Auto-bump semantic version from latest tag:
+```bash
+python release_prepare.py --bump patch --dry-run
+python release_prepare.py --bump minor --dry-run
+```
 
 ### 9) One-Command Release Pipeline (Windows)
 ```bash
@@ -154,6 +162,12 @@ python release_prepare.py --version v0.2.0 --create-tag
 ```
 
 可先用 `--dry-run` 预览，不写文件、不创建 tag。
+
+也支持根据最新 tag 自动递增版本：
+```bash
+python release_prepare.py --bump patch --dry-run
+python release_prepare.py --bump minor --dry-run
+```
 
 ### Windows 一键发布流水线
 ```bash
@@ -289,6 +303,12 @@ python release_prepare.py --version v0.2.0 --create-tag
 ```
 
 Add `--dry-run` for preview-only mode.
+
+You can also auto-bump from latest semantic tag:
+```bash
+python release_prepare.py --bump patch --dry-run
+python release_prepare.py --bump minor --dry-run
+```
 
 ### One-Command Release Pipeline (Windows)
 ```bash

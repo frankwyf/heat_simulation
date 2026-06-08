@@ -42,6 +42,11 @@ def load_benchmark_profiles(config_path="benchmark_profiles.json"):
     except json.JSONDecodeError:
         return {}
 
+
+def save_benchmark_profiles(config_path: str, profiles: dict):
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(profiles, f, ensure_ascii=False, indent=2)
+
 lang = st.sidebar.selectbox("Language / 语言", ["中文", "English"], index=0)
 text = get_text(lang)
 
@@ -142,11 +147,72 @@ with tab_optimizer:
     profile_config_path = st.text_input("Profile Config Path", value="benchmark_profiles.json")
     profiles = load_benchmark_profiles(profile_config_path)
 
+    editable_profiles = {}
     if profiles:
-        st.caption("Benchmark profile settings")
+        st.caption("Edit profile settings")
+        required_fields = [
+            "ga_population",
+            "ga_nochange_iter",
+            "pso_population",
+            "pso_iterations",
+            "sa_num_iter",
+            "sa_t_max",
+            "sa_cooling_rate",
+            "sa_max_outer_iter",
+        ]
+
         profile_rows = []
         all_keys = sorted({k for p in profiles.values() for k in p.keys()})
         for profile_name, settings in profiles.items():
+            row = {"profile": profile_name}
+            for key in all_keys:
+                row[key] = settings.get(key)
+            profile_rows.append(row)
+        profile_df = pd.DataFrame(profile_rows)
+
+        edited_df = st.data_editor(profile_df, width="stretch", num_rows="fixed")
+
+        for _, row in edited_df.iterrows():
+            profile_name = str(row["profile"])
+            editable_profiles[profile_name] = {}
+            for key in all_keys:
+                if pd.notna(row[key]):
+                    editable_profiles[profile_name][key] = row[key]
+
+        if st.button("Save Profile Config / 保存配置", width="stretch"):
+            try:
+                for profile_name, cfg in editable_profiles.items():
+                    missing = [k for k in required_fields if k not in cfg]
+                    if missing:
+                        raise ValueError(
+                            f"Profile {profile_name} missing fields: {', '.join(missing)}"
+                        )
+
+                    for int_key in [
+                        "ga_population",
+                        "ga_nochange_iter",
+                        "pso_population",
+                        "pso_iterations",
+                        "sa_num_iter",
+                        "sa_max_outer_iter",
+                    ]:
+                        cfg[int_key] = int(float(cfg[int_key]))
+
+                    for float_key in ["sa_t_max", "sa_cooling_rate"]:
+                        cfg[float_key] = float(cfg[float_key])
+
+                save_benchmark_profiles(profile_config_path, editable_profiles)
+                load_benchmark_profiles.clear()
+                st.success("Profile config saved successfully.")
+            except Exception as ex:
+                st.error(f"Failed to save profile config: {ex}")
+
+    if profiles:
+        st.caption("Benchmark profile settings")
+        profile_rows = []
+        display_profiles = editable_profiles if editable_profiles else profiles
+        all_keys = sorted({k for p in display_profiles.values() for k in p.keys()})
+        for profile_name, settings in display_profiles.items():
             row = {"profile": profile_name}
             for key in all_keys:
                 row[key] = settings.get(key)
@@ -162,10 +228,11 @@ with tab_optimizer:
     seed = st.number_input("Base Seed", min_value=1, max_value=99999, value=42, step=1)
     runtime_cap = st.slider("Per-Algorithm Runtime Cap (s)", min_value=1, max_value=60, value=12, step=1)
 
-    if profiles and "quick" in profiles and "standard" in profiles:
+    delta_source = editable_profiles if editable_profiles else profiles
+    if delta_source and "quick" in delta_source and "standard" in delta_source:
         st.caption("quick vs standard delta")
-        quick_cfg = profiles["quick"]
-        standard_cfg = profiles["standard"]
+        quick_cfg = delta_source["quick"]
+        standard_cfg = delta_source["standard"]
         delta_rows = []
         for key in sorted(set(quick_cfg.keys()) | set(standard_cfg.keys())):
             q = quick_cfg.get(key)
