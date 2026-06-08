@@ -40,6 +40,13 @@ python validate_local_pipeline.py
 
 This performs compile checks, CLI simulation, quick benchmark, and report generation in one command.
 
+### 7) Generate Release Checklist
+```bash
+python release_checklist.py
+```
+
+This summarizes git status, recent commits, and validation readiness in `reports/release_checklist.md`.
+
 The Web UI allows you to:
 - tune ambient temperature, initial condition, and wind speed
 - customize irradiance profile from 9:00-16:00
@@ -113,6 +120,13 @@ python validate_local_pipeline.py
 ```
 
 会依次执行编译检查、CLI 仿真、quick benchmark 与报告生成。
+
+### 生成发布检查清单
+```bash
+python release_checklist.py
+```
+
+会汇总 git 状态、最近提交与验证结果，生成 `reports/release_checklist.md`。
 
 ### 目录结构
 - `solve.py`: 主仿真入口（推荐）
@@ -224,6 +238,13 @@ python validate_local_pipeline.py
 
 Runs compile checks, CLI simulation, quick benchmark, and report generation in one reproducible step.
 
+### Generate Release Checklist
+```bash
+python release_checklist.py
+```
+
+Generates `reports/release_checklist.md` with git and validation readiness info.
+
 ## Notes
 - The optimization scripts are research-style experiments and may take longer to run.
 - For fast validation, use `solve.py`.
@@ -235,3 +256,4 @@ Runs compile checks, CLI simulation, quick benchmark, and report generation in o
 - `benchmark_runner.py`: reproducible local benchmark and report generator
 - `generate_portfolio_report.py`: generate markdown report for portfolio presentation
 - `validate_local_pipeline.py`: one-command local validation workflow
+- `release_checklist.py`: generate publish readiness checklist from git + validation status
