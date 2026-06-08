@@ -122,6 +122,51 @@ def apply_snapshot_rollback(current_profiles: dict, snapshot_payload: dict):
 
     return next_profiles
 
+
+PROFILE_RULES = {
+    "ga_population": {"min": 10, "max": 1000, "type": "int"},
+    "ga_nochange_iter": {"min": 1, "max": 1000, "type": "int"},
+    "pso_population": {"min": 10, "max": 1000, "type": "int"},
+    "pso_iterations": {"min": 1, "max": 1000, "type": "int"},
+    "sa_num_iter": {"min": 100, "max": 20000, "type": "int"},
+    "sa_t_max": {"min": 0.1, "max": 100.0, "type": "float"},
+    "sa_cooling_rate": {"min": 0.01, "max": 0.99, "type": "float"},
+    "sa_max_outer_iter": {"min": 1, "max": 5000, "type": "int"},
+}
+
+
+def validate_profile_parameter(parameter: str, value):
+    rule = PROFILE_RULES.get(parameter)
+    if rule is None:
+        return "unknown"
+    if value is None:
+        return "missing"
+
+    expected_type = rule["type"]
+    if expected_type == "int" and not isinstance(value, int):
+        if not isinstance(value, float) or int(value) != value:
+            return "type-mismatch"
+
+    try:
+        numeric_value = float(value)
+    except (TypeError, ValueError):
+        return "type-mismatch"
+
+    if numeric_value < rule["min"] or numeric_value > rule["max"]:
+        return "out-of-range"
+    return "ok"
+
+
+def build_snapshot_preview_df(snapshot_payload: dict):
+    changes = snapshot_payload.get("changes", [])
+    rows = []
+    for change in changes:
+        row = dict(change)
+        row["before_status"] = validate_profile_parameter(change.get("parameter"), change.get("before"))
+        row["after_status"] = validate_profile_parameter(change.get("parameter"), change.get("after"))
+        rows.append(row)
+    return pd.DataFrame(rows)
+
 lang = st.sidebar.selectbox("Language / 语言", ["中文", "English"], index=0)
 text = get_text(lang)
 
@@ -344,7 +389,10 @@ with tab_optimizer:
 
             if selected_snapshot_payload.get("changes"):
                 st.caption("Selected snapshot diff")
-                st.dataframe(pd.DataFrame(selected_snapshot_payload["changes"]), width="stretch")
+                preview_df = build_snapshot_preview_df(selected_snapshot_payload)
+                st.dataframe(preview_df, width="stretch")
+                if ((preview_df["before_status"] != "ok") | (preview_df["after_status"] != "ok")).any():
+                    st.warning("Selected snapshot contains missing, out-of-range, or type-mismatch parameters.")
             else:
                 st.info("Selected snapshot has no change details.")
         except Exception as ex:

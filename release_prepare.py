@@ -146,6 +146,7 @@ def prepare_release(
     since_days: int | None = None,
     author: str | None = None,
     grep_text: str | None = None,
+    require_nonempty: bool = False,
 ):
     if version and bump:
         raise RuntimeError("--version and --bump cannot be used together")
@@ -176,6 +177,9 @@ def prepare_release(
         author=author,
         grep_text=grep_text,
     )
+    if require_nonempty and not commits:
+        raise RuntimeError("No commits matched the selected release filters")
+
     grouped = _group_commits(commits)
 
     changelog_path = os.path.join(base_dir, "CHANGELOG.md")
@@ -214,6 +218,7 @@ def parse_args():
     parser.add_argument("--since-days", type=int, help="Use commits from the last N days as changelog source")
     parser.add_argument("--author", help="Only include commits whose author matches this pattern")
     parser.add_argument("--grep", dest="grep_text", help="Only include commits whose subject matches this keyword/regex")
+    parser.add_argument("--require-nonempty", action="store_true", help="Fail if filters produce zero commits")
     parser.add_argument("--create-tag", action="store_true", help="Create local annotated git tag")
     parser.add_argument("--dry-run", action="store_true", help="Preview without changing files/tags")
     return parser.parse_args()
@@ -231,4 +236,5 @@ if __name__ == "__main__":
         since_days=args.since_days,
         author=args.author,
         grep_text=args.grep_text,
+        require_nonempty=args.require_nonempty,
     )

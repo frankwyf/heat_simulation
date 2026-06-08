@@ -23,6 +23,7 @@ The optimizer tab supports editing `benchmark_profiles.json` directly in the UI 
 Each save writes a change snapshot under `reports/profile_history/` for traceability.
 You can also choose a snapshot in UI to rollback profile settings safely.
 Selected snapshot details and parameter diffs can be previewed before rollback.
+The preview flags `ok`, `missing`, `type-mismatch`, and `out-of-range` values before rollback.
 
 ### 4) Run Local Optimizer Benchmark (GA/PSO/SA)
 ```bash
@@ -79,6 +80,11 @@ python release_prepare.py --since-days 30 --version v0.2.0 --dry-run
 You can also filter by author and commit subject keyword:
 ```bash
 python release_prepare.py --since-days 30 --author "isidsh" --grep "feat" --version v0.2.0 --dry-run
+```
+
+If an empty result set should fail fast:
+```bash
+python release_prepare.py --since-days 30 --author "nobody" --version v0.2.0 --dry-run --require-nonempty
 ```
 
 Note: `--version` and `--bump` are mutually exclusive.
@@ -158,6 +164,7 @@ python benchmark_runner.py --runs 2 --ga-iter 200 --seed 42 --profile quick
 每次在 UI 保存配置时，会在 `reports/profile_history/` 生成参数差异快照。
 也支持在 UI 中选择快照执行回滚。
 回滚前可先在 UI 预览快照保存时间和参数变更明细。
+预览中会标记 `ok`、`missing`、`type-mismatch`、`out-of-range` 状态，便于先发现异常参数。
 
 ### 生成作品集报告（Markdown）
 ```bash
@@ -206,6 +213,11 @@ python release_prepare.py --since-days 30 --version v0.2.0 --dry-run
 也支持按作者和提交标题关键词筛选：
 ```bash
 python release_prepare.py --since-days 30 --author "isidsh" --grep "feat" --version v0.2.0 --dry-run
+```
+
+如果希望筛选结果为空时直接失败：
+```bash
+python release_prepare.py --since-days 30 --author "nobody" --version v0.2.0 --dry-run --require-nonempty
 ```
 
 注意：`--version` 和 `--bump` 不能同时使用。
@@ -320,6 +332,7 @@ Profile settings are versioned in `benchmark_profiles.json`.
 Every UI save creates a diff snapshot in `reports/profile_history/`.
 You can rollback profile settings from snapshot history directly in the UI.
 The selected snapshot preview shows saved time and parameter-level diffs before rollback.
+The preview also marks `ok`, `missing`, `type-mismatch`, and `out-of-range` validation states.
 
 ### Generate Portfolio Report
 ```bash
