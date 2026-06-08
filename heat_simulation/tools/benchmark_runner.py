@@ -15,9 +15,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from GA import GA_Individual, GA_optimizer
-from PSO import PSO
-import SA as sa_module
+from heat_simulation.core.paths import DEFAULT_BENCHMARK_PROFILE_PATH, DEFAULT_BENCHMARK_PROFILE_RELATIVE, REPORTS_DIR
+from heat_simulation.optimizers.GA import GA_Individual, GA_optimizer
+from heat_simulation.optimizers.PSO import PSO
+from heat_simulation.optimizers import SA as sa_module
 
 
 DEFAULT_PROFILE_SETTINGS = {
@@ -88,7 +89,7 @@ def _validate_profile_cfg(profile_name: str, profile_cfg: dict):
     if missing:
         raise ValueError(
             f"Profile '{profile_name}' missing required keys: {', '.join(missing)}. "
-            "Please update benchmark_profiles.json."
+            f"Please update {DEFAULT_BENCHMARK_PROFILE_RELATIVE}."
         )
 
 
@@ -184,9 +185,9 @@ def run_benchmark(
     base_seed: int = 42,
     profile: str = "quick",
     max_runtime_s: float | None = None,
-    profile_config_path: str = "benchmark_profiles.json",
+    profile_config_path: str = str(DEFAULT_BENCHMARK_PROFILE_PATH),
 ) -> Dict[str, str]:
-    os.makedirs("reports", exist_ok=True)
+    os.makedirs(REPORTS_DIR, exist_ok=True)
 
     warnings.filterwarnings("ignore", message="FigureCanvasAgg is non-interactive")
     profiles = _load_profiles(profile_config_path)
@@ -214,10 +215,10 @@ def run_benchmark(
     summary_df = _summary_table(all_results)
 
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    details_csv = f"reports/benchmark_details_{ts}.csv"
-    summary_csv = f"reports/benchmark_summary_{ts}.csv"
-    plot_png = f"reports/benchmark_chart_{ts}.png"
-    meta_json = f"reports/benchmark_meta_{ts}.json"
+    details_csv = str(REPORTS_DIR / f"benchmark_details_{ts}.csv")
+    summary_csv = str(REPORTS_DIR / f"benchmark_summary_{ts}.csv")
+    plot_png = str(REPORTS_DIR / f"benchmark_chart_{ts}.png")
+    meta_json = str(REPORTS_DIR / f"benchmark_meta_{ts}.json")
 
     details_df.to_csv(details_csv, index=False)
     summary_df.to_csv(summary_csv, index=False)
@@ -259,7 +260,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=42, help="Base random seed.")
     parser.add_argument("--profile", choices=["quick", "standard"], default="quick", help="quick for stable local checks, standard for heavier runs.")
     parser.add_argument("--max-runtime-s", type=float, default=12.0, help="Optional per-algorithm wall-time cap in seconds.")
-    parser.add_argument("--profile-config", default="benchmark_profiles.json", help="Path to benchmark profile config file.")
+    parser.add_argument("--profile-config", default=DEFAULT_BENCHMARK_PROFILE_RELATIVE, help="Path to benchmark profile config file.")
     return parser.parse_args()
 
 

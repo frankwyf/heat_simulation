@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 from datetime import datetime
@@ -6,9 +7,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from benchmark_runner import run_benchmark
-from portfolio_text import get_text
-from simulation_core import DEFAULT_IRRADIANCE, SimulationConfig, run_heat_simulation
+from heat_simulation.core.paths import (
+    BENCHMARK_META_GLOB,
+    DEFAULT_BENCHMARK_PROFILE_RELATIVE,
+    PROFILE_HISTORY_DIR,
+)
+from heat_simulation.core.portfolio_text import get_text
+from heat_simulation.core.simulation_core import DEFAULT_IRRADIANCE, SimulationConfig, run_heat_simulation
+from heat_simulation.tools.benchmark_runner import run_benchmark
 
 
 SCENARIOS = {
@@ -72,9 +78,9 @@ def save_profile_change_snapshot(before_profiles: dict, after_profiles: dict):
     if not changes:
         return None
 
-    os.makedirs("reports/profile_history", exist_ok=True)
+    os.makedirs(PROFILE_HISTORY_DIR, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    path = f"reports/profile_history/profile_change_{ts}.json"
+    path = str(PROFILE_HISTORY_DIR / f"profile_change_{ts}.json")
     payload = {
         "saved_at": datetime.now().isoformat(),
         "change_count": len(changes),
@@ -86,13 +92,12 @@ def save_profile_change_snapshot(before_profiles: dict, after_profiles: dict):
 
 
 def list_profile_snapshots(limit: int = 30):
-    history_dir = "reports/profile_history"
-    if not os.path.exists(history_dir):
+    if not PROFILE_HISTORY_DIR.exists():
         return []
     snapshots = []
-    for name in os.listdir(history_dir):
+    for name in os.listdir(PROFILE_HISTORY_DIR):
         if name.startswith("profile_change_") and name.endswith(".json"):
-            snapshots.append(os.path.join(history_dir, name))
+            snapshots.append(str(PROFILE_HISTORY_DIR / name))
     snapshots.sort(reverse=True)
     return snapshots[:limit]
 
@@ -166,6 +171,14 @@ def build_snapshot_preview_df(snapshot_payload: dict):
         row["after_status"] = validate_profile_parameter(change.get("parameter"), change.get("after"))
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+def load_latest_benchmark_meta():
+    matches = sorted(glob.glob(BENCHMARK_META_GLOB))
+    if not matches:
+        return None
+    with open(matches[-1], "r", encoding="utf-8") as f:
+        return json.load(f)
 
 lang = st.sidebar.selectbox("Language / 语言", ["中文", "English"], index=0)
 text = get_text(lang)
@@ -264,8 +277,17 @@ with tab_system:
 
 with tab_optimizer:
     st.write("Run local benchmark for GA/PSO/SA and generate reproducible report artifacts.")
-    profile_config_path = st.text_input("Profile Config Path", value="benchmark_profiles.json")
+    profile_config_path = st.text_input("Profile Config Path", value=DEFAULT_BENCHMARK_PROFILE_RELATIVE)
     profiles = load_benchmark_profiles(profile_config_path)
+
+    latest_meta = load_latest_benchmark_meta()
+    if latest_meta:
+        st.caption("Latest benchmark snapshot")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Profile", str(latest_meta.get("profile", "-")))
+        c2.metric("Best Algorithm", str(latest_meta.get("best_algorithm", "-")))
+        c3.metric("Runs / Algo", str(latest_meta.get("runs_per_algo", "-")))
+        st.caption(f"Generated at: {latest_meta.get('generated_at', '-')}")
 
     editable_profiles = {}
     if profiles:
@@ -455,7 +477,7 @@ with tab_optimizer:
                 st.download_button(
                     label=f"Download {label}",
                     data=f.read(),
-                    file_name=path.split("/")[-1],
+                    file_name=os.path.basename(path),
                     width="stretch",
                 )
 

@@ -6,8 +6,10 @@ from datetime import datetime
 
 import pandas as pd
 
+from heat_simulation.core.paths import BENCHMARK_META_GLOB, REPORTS_DIR
 
-def _latest_meta(pattern: str = "reports/benchmark_meta_*.json") -> str:
+
+def _latest_meta(pattern: str = BENCHMARK_META_GLOB) -> str:
     files = sorted(glob.glob(pattern))
     if not files:
         raise FileNotFoundError("No benchmark meta file found in reports/. Run benchmark_runner.py first.")
@@ -31,6 +33,12 @@ def _df_to_markdown_table(df: pd.DataFrame) -> str:
     return "\n".join(lines)
 
 
+def _relative_artifact_path(path: str, output_path: str) -> str:
+    base_dir = os.path.dirname(os.path.abspath(output_path))
+    relative = os.path.relpath(path, start=base_dir)
+    return relative.replace("\\", "/")
+
+
 def build_report(meta_path: str, output_path: str):
     with open(meta_path, "r", encoding="utf-8") as f:
         meta = json.load(f)
@@ -38,6 +46,10 @@ def build_report(meta_path: str, output_path: str):
     summary_csv = meta["artifacts"]["summary_csv"]
     chart_png = meta["artifacts"]["plot_png"]
     details_csv = meta["artifacts"]["details_csv"]
+    meta_ref = _relative_artifact_path(meta_path, output_path)
+    summary_ref = _relative_artifact_path(summary_csv, output_path)
+    chart_ref = _relative_artifact_path(chart_png, output_path)
+    details_ref = _relative_artifact_path(details_csv, output_path)
 
     summary = pd.read_csv(summary_csv)
     table_md = _df_to_markdown_table(summary)
@@ -57,14 +69,14 @@ def build_report(meta_path: str, output_path: str):
     lines.append("")
     lines.append("## Chart")
     lines.append("")
-    lines.append(f"![Benchmark chart]({chart_png})")
+    lines.append(f"![Benchmark chart]({chart_ref})")
     lines.append("")
     lines.append("## Artifacts")
     lines.append("")
-    lines.append(f"- Meta: {meta_path}")
-    lines.append(f"- Summary CSV: {summary_csv}")
-    lines.append(f"- Details CSV: {details_csv}")
-    lines.append(f"- Chart PNG: {chart_png}")
+    lines.append(f"- Meta: {meta_ref}")
+    lines.append(f"- Summary CSV: {summary_ref}")
+    lines.append(f"- Details CSV: {details_ref}")
+    lines.append(f"- Chart PNG: {chart_ref}")
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
@@ -74,7 +86,7 @@ def build_report(meta_path: str, output_path: str):
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate a portfolio-friendly markdown report from latest benchmark artifacts.")
     parser.add_argument("--meta", default=None, help="Path to benchmark meta json. Defaults to latest file in reports/.")
-    parser.add_argument("--out", default="reports/portfolio_report.md", help="Output markdown file path.")
+    parser.add_argument("--out", default=str(REPORTS_DIR / "portfolio_report.md"), help="Output markdown file path.")
     return parser.parse_args()
 
 

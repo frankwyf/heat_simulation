@@ -2,7 +2,7 @@ import argparse
 
 import matplotlib.pyplot as plt
 
-from simulation_core import SimulationConfig, run_heat_simulation
+from heat_simulation.core.simulation_core import SimulationConfig, run_heat_simulation
 
 
 def run_simulation(config: SimulationConfig, show_plot=True, save_path=None):

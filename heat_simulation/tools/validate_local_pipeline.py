@@ -5,6 +5,8 @@ import subprocess
 import sys
 from datetime import datetime
 
+from heat_simulation.core.paths import REPORTS_DIR
+
 
 def _run(cmd: list[str], cwd: str):
     env = os.environ.copy()
@@ -20,13 +22,35 @@ def _run(cmd: list[str], cwd: str):
 def main(base_dir: str):
     py = sys.executable
 
-    _run([py, "-m", "py_compile", "solve.py", "simulation_core.py", "app.py", "benchmark_runner.py", "generate_portfolio_report.py"], cwd=base_dir)
-    _run([py, "solve.py", "--no-plot", "--save-path", "result.png", "--initial-temp-c", "22", "--ambient-temp-c", "30", "--wind-speed", "2.5"], cwd=base_dir)
-    benchmark_output = _run([py, "benchmark_runner.py", "--runs", "1", "--ga-iter", "80", "--seed", "42", "--profile", "quick"], cwd=base_dir)
-    report_output = _run([py, "generate_portfolio_report.py"], cwd=base_dir)
+    compile_targets = [
+        "solve.py",
+        "app.py",
+        "heat_simulation/core/simulation_core.py",
+        "heat_simulation/tools/benchmark_runner.py",
+        "heat_simulation/tools/generate_portfolio_report.py",
+    ]
+    _run([py, "-m", "py_compile", *compile_targets], cwd=base_dir)
+    _run(
+        [
+            py,
+            "solve.py",
+            "--no-plot",
+            "--save-path",
+            str(REPORTS_DIR / "validation_result.png"),
+            "--initial-temp-c",
+            "22",
+            "--ambient-temp-c",
+            "30",
+            "--wind-speed",
+            "2.5",
+        ],
+        cwd=base_dir,
+    )
+    benchmark_output = _run([py, "-m", "heat_simulation.tools.benchmark_runner", "--runs", "1", "--ga-iter", "80", "--seed", "42", "--profile", "quick"], cwd=base_dir)
+    report_output = _run([py, "-m", "heat_simulation.tools.generate_portfolio_report"], cwd=base_dir)
 
-    os.makedirs(os.path.join(base_dir, "reports"), exist_ok=True)
-    validation_path = os.path.join(base_dir, "reports", "validation_summary.json")
+    os.makedirs(REPORTS_DIR, exist_ok=True)
+    validation_path = REPORTS_DIR / "validation_summary.json"
     with open(validation_path, "w", encoding="utf-8") as f:
         json.dump(
             {
