@@ -1,17 +1,15 @@
 # Release Checklist
 
-- Generated at: 2026-06-08T11:13:42.973723
+- Generated at: 2026-06-08T11:14:03.324937
 - Branch: master
 
 ## Git Health
 
-- Working tree clean: no
-- Pending changes:
-  - M README.md
-  - ?? release_checklist.py
+- Working tree clean: yes
 
 ## Recent Commits
 
+- a3dcd08 chore: add release checklist generator for publish readiness
 - c730052 perf: add bounded runtime controls for stable benchmark execution
 - 7da480f chore: add one-command local validation workflow for reproducible stability
 - ba69805 feat: add portfolio UI, benchmark pipeline, and stable optimizer runtime controls
@@ -26,4 +24,4 @@
 
 ## Ready To Publish
 
-- ready: no
+- ready: yes
