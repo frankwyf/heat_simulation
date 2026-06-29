@@ -73,32 +73,28 @@ class TestGenerateChecklist:
         content = open(out_path, encoding="utf-8").read()
         assert "ready: no" in content
 
-    def test_with_validation_passed(self, tmp_path):
+    def test_with_validation_passed(self, tmp_path, monkeypatch):
         subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
         subprocess.run(["git", "config", "user.email", "t@t.com"], cwd=str(tmp_path), capture_output=True)
         subprocess.run(["git", "config", "user.name", "T"], cwd=str(tmp_path), capture_output=True)
-        (tmp_path / "f.txt").write_text("x")
-        subprocess.run(["git", "add", "."], cwd=str(tmp_path), capture_output=True)
-        subprocess.run(["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True)
 
-        # Create mock validation summary in the location REPORTS_DIR points to
-        from heat_simulation.core.paths import REPORTS_DIR
-        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        val_path = REPORTS_DIR / "validation_summary.json"
-        already_existed = val_path.exists()
+        # Create validation summary BEFORE committing so working tree is clean
+        reports_dir = tmp_path / "reports"
+        reports_dir.mkdir()
+        val_path = reports_dir / "validation_summary.json"
         val_path.write_text(json.dumps({
             "status": "passed",
             "validated_at": "2024-01-01T00:00:00",
             "checks": ["compile", "benchmark"],
         }))
 
-        try:
-            out_path = str(tmp_path / "out.md")
-            generate_checklist(str(tmp_path), out_path)
-            content = open(out_path, encoding="utf-8").read()
-            # With a clean working tree (staged only), ready should be yes
-            assert "ready: yes" in content
-        finally:
-            # Restore the file if it already existed, otherwise remove
-            if not already_existed:
-                val_path.unlink(missing_ok=True)
+        (tmp_path / "f.txt").write_text("x")
+        subprocess.run(["git", "add", "."], cwd=str(tmp_path), capture_output=True)
+        subprocess.run(["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True)
+
+        monkeypatch.setattr("heat_simulation.release.publish_check.REPORTS_DIR", reports_dir)
+        out_path = str(tmp_path / "out2.md")
+        generate_checklist(str(tmp_path), out_path)
+        content = open(out_path, encoding="utf-8").read()
+        assert "ready: yes" in content
+        assert "validation status: passed" in content
