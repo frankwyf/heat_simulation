@@ -29,6 +29,12 @@ from .health_monitor import (
     format_health_markdown,
     SystemHealthReport,
 )
+from .performance_profiler import (
+    profile_single_run,
+    profile_scaling,
+    compute_scaling_metrics,
+    generate_profiling_report,
+)
 
 __all__ = [
     "compute_industrial_kpis",
@@ -50,4 +56,8 @@ __all__ = [
     "run_health_checks",
     "format_health_markdown",
     "SystemHealthReport",
+    "profile_single_run",
+    "profile_scaling",
+    "compute_scaling_metrics",
+    "generate_profiling_report",
 ]
